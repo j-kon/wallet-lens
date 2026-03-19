@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowDownRight, ArrowUpRight, Clock3, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { formatTimestampWithRelative } from '../utils/formatDate';
 import { formatBTC, formatFeeRate, formatSats } from '../utils/formatBTC';
 import { getTransactionExplorerUrl } from '../utils/explorerLinks';
@@ -77,6 +78,13 @@ function TransactionCard({ transaction, onSelect, selected }) {
             </div>
 
             <div className="flex items-center gap-2">
+              <Link
+                to={`/tx/${transaction.txid}`}
+                onClick={(event) => event.stopPropagation()}
+                className="inline-flex h-9 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:text-white"
+              >
+                Tx page
+              </Link>
               <a
                 href={getTransactionExplorerUrl(transaction.txid)}
                 target="_blank"

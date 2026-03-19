@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Blocks, Clock3, ExternalLink, Scale, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { formatTimestampWithRelative } from '../utils/formatDate';
 import { formatBTC, formatFeeRate, formatSats } from '../utils/formatBTC';
 import { getTransactionExplorerUrl } from '../utils/explorerLinks';
@@ -112,6 +113,12 @@ function TransactionDetailsModal({
                   </p>
                   {activeTransaction?.txid ? (
                     <>
+                      <Link
+                        to={`/tx/${activeTransaction.txid}`}
+                        className="inline-flex items-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
+                      >
+                        Full page
+                      </Link>
                       <a
                         href={getTransactionExplorerUrl(activeTransaction.txid)}
                         target="_blank"

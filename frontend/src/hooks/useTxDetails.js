@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchTransactionDetail } from '../services/bitcoinApi';
+import { fetchTransactionDetail, validateTransactionId } from '../services/bitcoinApi';
+
+const transactionDetailCache = new Map();
+
+function getCacheKey(txid, address) {
+  return `${address ?? 'global'}:${txid}`;
+}
 
 export function useTxDetails(address) {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -7,7 +13,6 @@ export function useTxDetails(address) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const cacheRef = useRef(new Map());
   const abortRef = useRef(null);
 
   const closeTransaction = useCallback(() => {
@@ -18,17 +23,24 @@ export function useTxDetails(address) {
     setError('');
   }, []);
 
-  const openTransaction = useCallback(
-    async (transaction) => {
-      setSelectedTransaction(transaction);
-      setTransactionDetails(transaction);
+  const loadTransactionById = useCallback(
+    async (txid, { previewTransaction = null, addressOverride } = {}) => {
+      const resolvedTxid = txid?.trim().toLowerCase() ?? '';
+      const resolvedAddress = addressOverride ?? address ?? null;
+
+      setSelectedTransaction(previewTransaction ?? (resolvedTxid ? { txid: resolvedTxid } : null));
+      setTransactionDetails(previewTransaction);
       setError('');
 
-      if (!address) {
+      if (!resolvedTxid || !validateTransactionId(resolvedTxid)) {
+        setLoading(false);
+        setTransactionDetails(null);
+        setError('Transaction not found');
         return;
       }
 
-      const cachedDetail = cacheRef.current.get(transaction.txid);
+      const cacheKey = getCacheKey(resolvedTxid, resolvedAddress);
+      const cachedDetail = transactionDetailCache.get(cacheKey);
 
       if (cachedDetail) {
         setTransactionDetails(cachedDetail);
@@ -42,20 +54,31 @@ export function useTxDetails(address) {
       setLoading(true);
 
       try {
-        const detail = await fetchTransactionDetail(transaction.txid, controller.signal, address);
+        const detail = await fetchTransactionDetail(
+          resolvedTxid,
+          controller.signal,
+          resolvedAddress,
+        );
 
         if (controller.signal.aborted) {
           return;
         }
 
-        cacheRef.current.set(transaction.txid, detail);
+        transactionDetailCache.set(cacheKey, detail);
         setTransactionDetails(detail);
       } catch (detailError) {
         if (controller.signal.aborted) {
           return;
         }
 
-        setError('Unable to fetch data from network');
+        setTransactionDetails(null);
+
+        if (detailError?.status === 400 || detailError?.status === 404) {
+          setError('Transaction not found');
+          return;
+        }
+
+        setError('Unable to fetch transaction');
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -65,8 +88,14 @@ export function useTxDetails(address) {
     [address],
   );
 
+  const openTransaction = useCallback(
+    async (transaction) => {
+      await loadTransactionById(transaction?.txid, { previewTransaction: transaction });
+    },
+    [loadTransactionById],
+  );
+
   useEffect(() => {
-    cacheRef.current.clear();
     closeTransaction();
   }, [address, closeTransaction]);
 
@@ -84,6 +113,7 @@ export function useTxDetails(address) {
     detailsLoading: loading,
     detailsError: error,
     openTransaction,
+    loadTransactionById,
     closeTransaction,
   };
 }

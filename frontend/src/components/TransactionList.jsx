@@ -10,6 +10,7 @@ import { fadeUp, listItemReveal, softStagger } from '../utils/motion';
 
 function TransactionList({
   transactions,
+  pendingTransactions = [],
   onSelectTransaction,
   selectedTransactionId,
   loading,
@@ -22,6 +23,7 @@ function TransactionList({
     netFlow > 0 ? 'text-emerald-300' : netFlow < 0 ? 'text-rose-300' : 'text-slate-200';
   const netFlowLabel =
     netFlow > 0 ? 'incoming' : netFlow < 0 ? 'outgoing' : 'balanced';
+  const totalEntries = transactions.length + pendingTransactions.length;
 
   return (
     <motion.div initial="hidden" animate="visible" variants={fadeUp}>
@@ -36,11 +38,38 @@ function TransactionList({
         </div>
         <div className="flex items-center gap-2">
           {loading ? <InlineSpinner /> : null}
-          <Badge variant="accent">{transactions.length} entries</Badge>
+          <Badge variant="accent">{totalEntries} entries</Badge>
+          {pendingTransactions.length > 0 ? (
+            <Badge variant="warning">{pendingTransactions.length} pending</Badge>
+          ) : null}
         </div>
       </div>
 
-      {transactions.length > 0 ? (
+      {pendingTransactions.length > 0 ? (
+        <motion.div variants={listItemReveal} className="mt-5 rounded-[24px] border border-amber-400/18 bg-[linear-gradient(180deg,rgba(245,158,11,0.12),rgba(15,12,8,0.22))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.24em] text-amber-200/75">Pending Transactions</p>
+              <p className="mt-2 text-sm text-amber-50">Unconfirmed mempool activity currently associated with this address.</p>
+            </div>
+            <Badge variant="warning">Mempool</Badge>
+          </div>
+
+          <motion.div initial="hidden" animate="visible" variants={softStagger} className="mt-4 space-y-3">
+            {pendingTransactions.map((transaction) => (
+              <motion.div key={transaction.txid} variants={listItemReveal}>
+                <TransactionCard
+                  transaction={transaction}
+                  onSelect={onSelectTransaction}
+                  selected={selectedTransactionId === transaction.txid}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
+      ) : null}
+
+      {totalEntries > 0 ? (
         <motion.div variants={listItemReveal} className="mt-5 rounded-[24px] border border-white/8 bg-white/[0.03] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
           <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Net Flow</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -60,13 +89,19 @@ function TransactionList({
 
       {loading && transactions.length === 0 ? (
         <Loader className="pt-6" label="Loading transactions..." />
-      ) : transactions.length === 0 ? (
+      ) : transactions.length === 0 && pendingTransactions.length === 0 ? (
         <div className="pt-6">
           <EmptyState
             icon={Activity}
             title="No transaction history found"
             description="This address has no transaction history yet"
           />
+        </div>
+      ) : transactions.length === 0 ? (
+        <div className="pt-6">
+          <div className="rounded-[24px] border border-white/8 bg-white/[0.03] px-4 py-4 text-sm text-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+            No confirmed chain transactions are loaded yet. Pending mempool activity is shown above.
+          </div>
         </div>
       ) : (
         <motion.div initial="hidden" animate="visible" variants={softStagger} className="mt-6 space-y-3">

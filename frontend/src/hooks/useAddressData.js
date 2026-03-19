@@ -49,7 +49,7 @@ function mergeTransactions(existingTransactions, nextTransactions) {
   });
 }
 
-export function useAddressData() {
+export function useAddressData({ restoreOnMount = true } = {}) {
   const [query, setQuery] = useState('');
   const [wallet, setWallet] = useState(null);
   const [requestedAddress, setRequestedAddress] = useState('');
@@ -111,7 +111,12 @@ export function useAddressData() {
       setQuery(trimmedAddress);
       setWallet(liveWallet);
       setHasMoreTransactions(liveWallet.pagination.hasMoreTransactions);
-      setMessage((liveWallet.transactions ?? []).length === 0 ? getNoTransactionsMessage() : null);
+      setMessage(
+        (liveWallet.transactions ?? []).length === 0 &&
+        (liveWallet.pendingTransactions ?? []).length === 0
+          ? getNoTransactionsMessage()
+          : null,
+      );
     } catch (requestError) {
       if (controller.signal.aborted) {
         return;
@@ -178,7 +183,12 @@ export function useAddressData() {
       }
 
       const mergedTransactions = mergeTransactions(wallet.transactions, nextPage.transactions);
-      const insights = deriveWalletInsights(wallet.address, mergedTransactions, wallet.utxos);
+      const insights = deriveWalletInsights(
+        wallet.address,
+        mergedTransactions,
+        wallet.utxos,
+        wallet.pendingTransactions,
+      );
 
       setWallet((currentWallet) => ({
         ...currentWallet,
@@ -206,7 +216,7 @@ export function useAddressData() {
   }, [hasMoreTransactions, loadingMoreTransactions, wallet]);
 
   useEffect(() => {
-    if (restoredOnceRef.current) {
+    if (restoredOnceRef.current || !restoreOnMount) {
       return;
     }
 
@@ -224,7 +234,7 @@ export function useAddressData() {
 
     setQuery(persistedAddress);
     searchAddress(persistedAddress, { immediate: true });
-  }, [searchAddress]);
+  }, [restoreOnMount, searchAddress]);
 
   useEffect(
     () => () => {

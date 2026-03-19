@@ -1,6 +1,7 @@
 const BASE_URL = 'https://blockstream.info/testnet/api';
 const TESTNET_ADDRESS_REGEX =
   /^tb1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{11,71}$/i;
+const TXID_REGEX = /^[a-f0-9]{64}$/i;
 
 function createApiError(message, status, path, kind = 'api') {
   const error = new Error(message);
@@ -68,6 +69,23 @@ function getValueFlowForAddress(collection, address, pickValue) {
 
 export function validateTestnetAddress(address) {
   return TESTNET_ADDRESS_REGEX.test(address.trim().toLowerCase());
+}
+
+export function validateTransactionId(txid) {
+  return TXID_REGEX.test(txid.trim().toLowerCase());
+}
+
+function mergeTransactionsById(...collections) {
+  const seenTransactionIds = new Set();
+
+  return collections.flat().filter((transaction) => {
+    if (!transaction?.txid || seenTransactionIds.has(transaction.txid)) {
+      return false;
+    }
+
+    seenTransactionIds.add(transaction.txid);
+    return true;
+  });
 }
 
 function getAddressPresence(collection, address) {
@@ -185,8 +203,15 @@ function normalizeUtxo(utxo, tipHeight) {
 function normalizeWalletSnapshot(address, addressInfo, transactions, utxos, tipHeight) {
   const chainStats = addressInfo?.chain_stats ?? {};
   const mempoolStats = addressInfo?.mempool_stats ?? {};
-  const normalizedTransactions = (transactions ?? []).map((tx) =>
+  const normalizedTransactions = (transactions.initial ?? []).map((tx) =>
     normalizeTransaction(tx, address, tipHeight),
+  );
+  const normalizedPendingTransactions = mergeTransactionsById(
+    (transactions.mempool ?? []).map((tx) => normalizeTransaction(tx, address, tipHeight)),
+    normalizedTransactions.filter((transaction) => !transaction.status?.confirmed),
+  );
+  const normalizedChainTransactions = normalizedTransactions.filter(
+    (transaction) => transaction.status?.confirmed,
   );
   const normalizedUtxos = (utxos ?? [])
     .map((utxo) => normalizeUtxo(utxo, tipHeight))
@@ -215,25 +240,40 @@ function normalizeWalletSnapshot(address, addressInfo, transactions, utxos, tipH
       confirmedTransactions: chainStats.tx_count ?? 0,
       pendingTransactions: mempoolStats.tx_count ?? 0,
     },
-    transactions: normalizedTransactions,
-    netFlow: getNetFlow(normalizedTransactions),
-    metadata: getAddressMetadata(address, normalizedTransactions, normalizedUtxos),
-    pagination: getPaginationState(normalizedTransactions),
+    transactions: normalizedChainTransactions,
+    pendingTransactions: normalizedPendingTransactions,
+    netFlow: getNetFlow([...normalizedPendingTransactions, ...normalizedChainTransactions]),
+    metadata: getAddressMetadata(
+      address,
+      [...normalizedPendingTransactions, ...normalizedChainTransactions],
+      normalizedUtxos,
+    ),
+    pagination: getPaginationState(normalizedChainTransactions),
     utxos: normalizedUtxos,
   };
 }
 
 export async function fetchWalletSnapshot(address, signal) {
-  const [addressInfo, transactions, utxos, tipHeightText] = await Promise.all([
+  const [addressInfo, transactions, mempoolTransactions, utxos, tipHeightText] = await Promise.all([
     request(`/address/${address}`, { signal }),
     request(`/address/${address}/txs`, { signal }),
+    request(`/address/${address}/txs/mempool`, { signal }),
     request(`/address/${address}/utxo`, { signal }),
     request('/blocks/tip/height', { signal, responseType: 'text' }).catch(() => null),
   ]);
 
   const tipHeight = tipHeightText ? Number(tipHeightText) : null;
 
-  return normalizeWalletSnapshot(address, addressInfo, transactions, utxos, tipHeight);
+  return normalizeWalletSnapshot(
+    address,
+    addressInfo,
+    {
+      initial: transactions,
+      mempool: mempoolTransactions,
+    },
+    utxos,
+    tipHeight,
+  );
 }
 
 export async function fetchTransactionDetail(txid, signal, address) {
@@ -262,12 +302,13 @@ export async function fetchAddressTransactionsPage(address, lastSeenTxid, signal
   };
 }
 
-export function deriveWalletInsights(address, transactions, utxos) {
+export function deriveWalletInsights(address, transactions, utxos, pendingTransactions = []) {
   const sortedUtxos = [...utxos].sort((left, right) => right.value - left.value);
+  const allTransactions = [...pendingTransactions, ...transactions];
 
   return {
-    metadata: getAddressMetadata(address, transactions, sortedUtxos),
-    netFlow: getNetFlow(transactions),
+    metadata: getAddressMetadata(address, allTransactions, sortedUtxos),
+    netFlow: getNetFlow(allTransactions),
     pagination: getPaginationState(transactions),
     utxos: sortedUtxos,
   };
