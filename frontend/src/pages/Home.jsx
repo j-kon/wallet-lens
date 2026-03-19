@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, DatabaseZap, ExternalLink, Radio, Sparkles } from 'lucide-react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { AlertTriangle, DatabaseZap, Radio, Sparkles } from 'lucide-react';
 import AddressSearch from '../components/AddressSearch';
 import AddressMetadataPanel from '../components/AddressMetadataPanel';
 import FeeEstimatesPanel from '../components/FeeEstimatesPanel';
@@ -22,7 +22,7 @@ import { useBlocks } from '../hooks/useBlocks';
 import { useFeeEstimates } from '../hooks/useFeeEstimates';
 import { useMempoolData } from '../hooks/useMempoolData';
 import { useTxDetails } from '../hooks/useTxDetails';
-import { getAddressExplorerUrl } from '../utils/explorerLinks';
+import { getAddressRoute } from '../utils/explorerLinks';
 import { fadeUp, getReveal, hoverLift, listItemReveal, softStagger } from '../utils/motion';
 import { detectSearchTarget, normalizeSearchInput } from '../utils/searchTarget';
 
@@ -75,7 +75,10 @@ function DashboardSkeleton() {
 function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const routedAddress = normalizeSearchInput(searchParams.get('address') ?? '');
+  const { address: routedAddressParam } = useParams();
+  const routedAddress = normalizeSearchInput(
+    routedAddressParam ?? searchParams.get('address') ?? '',
+  );
   const [localSearchMessage, setLocalSearchMessage] = useState(null);
 
   const {
@@ -104,7 +107,7 @@ function Home() {
   } = useTxDetails(wallet?.address);
   const { feeBands, feeEstimatesLoading, feeEstimatesError } = useFeeEstimates();
   const { mempool, mempoolLoading, mempoolError } = useMempoolData();
-  const { blocks, blocksLoading, blocksError } = useBlocks(6);
+  const { blocks, blocksLoading, blocksError } = useBlocks(5);
 
   useEffect(() => {
     if (!routedAddress || routedAddress === requestedAddress) {
@@ -130,7 +133,7 @@ function Home() {
         return;
       }
 
-      setSearchParams({ address: target.value });
+      navigate(getAddressRoute(target.value));
       return;
     }
 
@@ -152,13 +155,14 @@ function Home() {
       return;
     }
 
-    setSearchParams({ address: demoAddress });
+    navigate(getAddressRoute(demoAddress));
   };
 
   const handleClear = () => {
     setLocalSearchMessage(null);
     clearSearch();
     setSearchParams({});
+    navigate('/');
   };
 
   const displayMessage = localSearchMessage ?? message;
@@ -268,7 +272,7 @@ function Home() {
 
         {wallet ? (
           <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-            <Card className="mt-8 p-5">
+            <Card className="mt-6 p-4 lg:p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Active Dataset</p>
@@ -290,15 +294,12 @@ function Home() {
                     <Badge variant="warning">{wallet.pendingTransactions.length} mempool</Badge>
                   ) : null}
                   {requestedAddress === demoAddress ? <Badge variant="accent">Demo address</Badge> : null}
-                  <a
-                    href={getAddressExplorerUrl(wallet.address)}
-                    target="_blank"
-                    rel="noreferrer"
+                  <Link
+                    to={getAddressRoute(wallet.address)}
                     className="inline-flex items-center gap-2 rounded-[20px] border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:text-white"
                   >
-                    <ExternalLink className="h-4 w-4 text-brand-sky" />
-                    Blockstream
-                  </a>
+                    Address page
+                  </Link>
                   <Badge variant="subtle">
                     Updated{' '}
                     {new Intl.DateTimeFormat('en-US', {
@@ -310,12 +311,6 @@ function Home() {
               </div>
             </Card>
           </motion.div>
-        ) : null}
-
-        {wallet ? (
-          <div className="mt-6">
-            <AddressMetadataPanel address={wallet.address} metadata={wallet.metadata} />
-          </div>
         ) : null}
 
         {displayMessage?.tone === 'error' && !wallet ? (
@@ -337,54 +332,14 @@ function Home() {
           </div>
         ) : null}
 
-        <section className="mt-8">
-          <motion.div initial="hidden" animate="visible" variants={softStagger} className="space-y-4">
-            <motion.div variants={getReveal({ y: 16, duration: 0.42 })}>
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Network Intelligence</p>
-                  <h2 className="mt-2 font-display text-[2.3rem] tracking-[-0.05em] text-slate-50">
-                    Testnet network telemetry
-                  </h2>
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-                    Keep the wallet view grounded in current network conditions with live fee guidance, mempool pressure, and the latest blocks.
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="subtle">Live fee bands</Badge>
-                  <Badge variant="subtle">Mempool snapshot</Badge>
-                  <Badge variant="subtle">Recent blocks</Badge>
-                </div>
-              </div>
-            </motion.div>
-
-            <div className="grid gap-6 xl:grid-cols-3">
-              <FeeEstimatesPanel
-                feeBands={feeBands}
-                loading={feeEstimatesLoading}
-                error={feeEstimatesError}
-              />
-              <MempoolOverviewPanel
-                mempool={mempool}
-                loading={mempoolLoading}
-                error={mempoolError}
-              />
-              <LatestBlocksPanel
-                blocks={blocks}
-                loading={blocksLoading}
-                error={blocksError}
-              />
-            </div>
-          </motion.div>
-        </section>
-
-        <section className="mt-8">
+        <section className="mt-6">
           {loading && !wallet ? (
             <DashboardSkeleton />
           ) : wallet ? (
-            <motion.div initial="hidden" animate="visible" variants={softStagger} className="space-y-6">
+            <motion.div initial="hidden" animate="visible" variants={softStagger} className="space-y-4">
               <SummaryCards summary={wallet.summary} />
-              <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_360px]">
+              <AddressMetadataPanel address={wallet.address} metadata={wallet.metadata} />
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_340px]">
                 <TransactionList
                   transactions={wallet.transactions}
                   pendingTransactions={wallet.pendingTransactions}
@@ -419,6 +374,47 @@ function Home() {
               }
             />
           )}
+        </section>
+
+        <section className={wallet ? 'mt-6' : 'mt-8'}>
+          <motion.div initial="hidden" animate="visible" variants={softStagger} className="space-y-4">
+            <motion.div variants={getReveal({ y: 16, duration: 0.42 })}>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Network Intelligence</p>
+                  <h2 className="mt-2 font-display text-[2rem] tracking-[-0.05em] text-slate-50">
+                    Testnet network telemetry
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                    Keep the wallet view grounded in current network conditions with live fee guidance, mempool pressure, and the latest blocks.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="subtle">Live fee bands</Badge>
+                  <Badge variant="subtle">Mempool snapshot</Badge>
+                  <Badge variant="subtle">Recent blocks</Badge>
+                </div>
+              </div>
+            </motion.div>
+
+            <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(320px,0.88fr)]">
+              <FeeEstimatesPanel
+                feeBands={feeBands}
+                loading={feeEstimatesLoading}
+                error={feeEstimatesError}
+              />
+              <MempoolOverviewPanel
+                mempool={mempool}
+                loading={mempoolLoading}
+                error={mempoolError}
+              />
+              <LatestBlocksPanel
+                blocks={blocks}
+                loading={blocksLoading}
+                error={blocksError}
+              />
+            </div>
+          </motion.div>
         </section>
       </main>
 

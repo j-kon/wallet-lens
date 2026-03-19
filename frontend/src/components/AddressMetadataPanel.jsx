@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
-import { ExternalLink, Layers3, RadioTower, ShieldCheck } from 'lucide-react';
+import { Layers3, RadioTower, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { formatBTC, formatSats } from '../utils/formatBTC';
 import { formatDateTime, formatRelativeTime } from '../utils/formatDate';
-import { getAddressExplorerUrl } from '../utils/explorerLinks';
+import { getAddressRoute } from '../utils/explorerLinks';
 import Badge from './UI/Badge';
 import Card from './UI/Card';
 import { fadeUp, hoverLift, listItemReveal, softStagger } from '../utils/motion';
@@ -24,100 +25,117 @@ function MetadataRow({ label, value, helper }) {
 function AddressMetadataPanel({ address, metadata }) {
   return (
     <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-      <Card className="p-6 lg:p-7">
-      <div className="flex flex-col gap-4 border-b border-white/6 pb-5 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Address Metadata</p>
-          <h2 className="mt-2 font-display text-[2rem] tracking-[-0.04em] text-slate-50">Wallet context</h2>
-          <p className="mt-3 text-sm leading-7 text-slate-400">
-            Quick address-level metadata and explorer shortcuts for developer workflows.
-          </p>
+      <Card className="p-5 lg:p-6">
+        <div className="flex flex-col gap-4 border-b border-white/6 pb-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Address Metadata</p>
+            <h2 className="mt-2 font-display text-[1.7rem] tracking-[-0.04em] text-slate-50">
+              Wallet context
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Compact address metadata for wallet-level inspection and internal explorer navigation.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="testnet">Testnet</Badge>
+            <Link
+              to={getAddressRoute(address)}
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
+            >
+              Open address page
+            </Link>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="testnet">Testnet</Badge>
-          <a
-            href={getAddressExplorerUrl(address)}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={softStagger}
+          className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5"
+        >
+          <MetadataRow
+            label="Address Type"
+            value={metadata.addressType}
+            helper="Detected from the current prefix"
+          />
+          <MetadataRow
+            label="Network"
+            value={metadata.network}
+            helper="WalletLens testnet route"
+          />
+          <MetadataRow
+            label="Total UTXOs"
+            value={String(metadata.utxoCount)}
+            helper="Spendable outputs currently visible"
+          />
+          <MetadataRow
+            label="Largest UTXO"
+            value={formatBTC(metadata.largestUtxo)}
+            helper={formatSats(metadata.largestUtxo)}
+          />
+          <MetadataRow
+            label="Last Activity"
+            value={
+              metadata.lastActivityTimestamp
+                ? formatRelativeTime(metadata.lastActivityTimestamp)
+                : 'No confirmed activity'
+            }
+            helper={
+              metadata.lastActivityTimestamp
+                ? formatDateTime(metadata.lastActivityTimestamp)
+                : 'No block timestamp available yet'
+            }
+          />
+        </motion.div>
+
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={softStagger}
+          className="mt-5 grid gap-3 sm:grid-cols-3"
+        >
+          <motion.div
+            variants={listItemReveal}
+            whileHover={hoverLift}
+            className="rounded-[24px] border border-white/8 bg-white/[0.03] p-3.5 text-sm text-slate-300"
           >
-            <ExternalLink className="h-4 w-4 text-brand-sky" />
-            View address
-          </a>
-        </div>
-      </div>
-
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={softStagger}
-        className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5"
-      >
-        <MetadataRow
-          label="Address Type"
-          value={metadata.addressType}
-          helper="Detected from address prefix"
-        />
-        <MetadataRow
-          label="Network"
-          value={metadata.network}
-          helper="Blockstream Esplora testnet"
-        />
-        <MetadataRow
-          label="Total UTXOs"
-          value={String(metadata.utxoCount)}
-          helper="Spendable outputs tracked"
-        />
-        <MetadataRow
-          label="Largest UTXO"
-          value={formatBTC(metadata.largestUtxo)}
-          helper={formatSats(metadata.largestUtxo)}
-        />
-        <MetadataRow
-          label="Last Activity"
-          value={
-            metadata.lastActivityTimestamp
-              ? formatRelativeTime(metadata.lastActivityTimestamp)
-              : 'No confirmed activity'
-          }
-          helper={
-            metadata.lastActivityTimestamp
-              ? formatDateTime(metadata.lastActivityTimestamp)
-              : 'No block timestamp available yet'
-          }
-        />
-      </motion.div>
-
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={softStagger}
-        className="mt-6 grid gap-3 sm:grid-cols-3"
-      >
-        <motion.div variants={listItemReveal} whileHover={hoverLift} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 text-sm text-slate-300">
-          <div className="flex items-center gap-2 text-slate-100">
-            <ShieldCheck className="h-4 w-4 text-brand-amber" />
-            Address verified
-          </div>
-          <p className="mt-2 text-slate-400">Validated as a Bech32 testnet address before requests are sent.</p>
+            <div className="flex items-center gap-2 text-slate-100">
+              <ShieldCheck className="h-4 w-4 text-brand-amber" />
+              Address verified
+            </div>
+            <p className="mt-2 text-slate-400">
+              Requests are only sent after the Bech32 testnet format passes validation.
+            </p>
+          </motion.div>
+          <motion.div
+            variants={listItemReveal}
+            whileHover={hoverLift}
+            className="rounded-[24px] border border-white/8 bg-white/[0.03] p-3.5 text-sm text-slate-300"
+          >
+            <div className="flex items-center gap-2 text-slate-100">
+              <Layers3 className="h-4 w-4 text-brand-sky" />
+              UTXO-aware
+            </div>
+            <p className="mt-2 text-slate-400">
+              The largest output and the total count are derived directly from the spendable set.
+            </p>
+          </motion.div>
+          <motion.div
+            variants={listItemReveal}
+            whileHover={hoverLift}
+            className="rounded-[24px] border border-white/8 bg-white/[0.03] p-3.5 text-sm text-slate-300"
+          >
+            <div className="flex items-center gap-2 text-slate-100">
+              <RadioTower className="h-4 w-4 text-emerald-300" />
+              Route-linked
+            </div>
+            <p className="mt-2 text-slate-400">
+              Related addresses, transactions, and blocks stay inside WalletLens instead of leaving the app.
+            </p>
+          </motion.div>
         </motion.div>
-        <motion.div variants={listItemReveal} whileHover={hoverLift} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 text-sm text-slate-300">
-          <div className="flex items-center gap-2 text-slate-100">
-            <Layers3 className="h-4 w-4 text-brand-sky" />
-            UTXO-aware
-          </div>
-          <p className="mt-2 text-slate-400">Largest output and total UTXO count are derived from the current spendable set.</p>
-        </motion.div>
-        <motion.div variants={listItemReveal} whileHover={hoverLift} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 text-sm text-slate-300">
-          <div className="flex items-center gap-2 text-slate-100">
-            <RadioTower className="h-4 w-4 text-emerald-300" />
-            Explorer linked
-          </div>
-          <p className="mt-2 text-slate-400">Deep-link out to Blockstream Explorer for independent transaction and address verification.</p>
-        </motion.div>
-      </motion.div>
-    </Card>
+      </Card>
     </motion.div>
   );
 }

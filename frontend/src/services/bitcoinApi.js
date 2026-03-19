@@ -2,6 +2,7 @@ const BASE_URL = 'https://blockstream.info/testnet/api';
 const TESTNET_ADDRESS_REGEX =
   /^tb1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{11,71}$/i;
 const TXID_REGEX = /^[a-f0-9]{64}$/i;
+const BLOCK_HASH_REGEX = /^[a-f0-9]{64}$/i;
 
 function createApiError(message, status, path, kind = 'api') {
   const error = new Error(message);
@@ -75,6 +76,14 @@ export function validateTransactionId(txid) {
   return TXID_REGEX.test(txid.trim().toLowerCase());
 }
 
+function isBlockHeight(value) {
+  return /^\d+$/.test(String(value ?? '').trim());
+}
+
+function isBlockHash(value) {
+  return BLOCK_HASH_REGEX.test(String(value ?? '').trim().toLowerCase());
+}
+
 function normalizeMempoolOverview(mempool) {
   return {
     count: mempool?.count ?? 0,
@@ -93,6 +102,28 @@ function normalizeBlocks(blocks, limit = 6) {
     size: block.size ?? 0,
     weight: block.weight ?? 0,
   }));
+}
+
+function normalizeBlockDetails(block, status, tipHeight, transactionsPreview) {
+  return {
+    hash: block.id,
+    height: block.height,
+    version: block.version ?? null,
+    timestamp: block.timestamp,
+    txCount: block.tx_count ?? 0,
+    size: block.size ?? 0,
+    weight: block.weight ?? 0,
+    merkleRoot: block.merkle_root ?? null,
+    previousBlockHash: block.previousblockhash ?? null,
+    mediantime: block.mediantime ?? null,
+    nonce: block.nonce ?? null,
+    bits: block.bits ?? null,
+    difficulty: block.difficulty ?? null,
+    inBestChain: status?.in_best_chain ?? true,
+    nextBlockHash: status?.next_best ?? null,
+    confirmations: typeof tipHeight === 'number' ? Math.max(tipHeight - block.height + 1, 1) : null,
+    transactionsPreview,
+  };
 }
 
 function mergeTransactionsById(...collections) {
@@ -321,6 +352,32 @@ export async function fetchMempoolOverview(signal) {
 export async function fetchLatestBlocks(signal, limit = 6) {
   const blocks = await request('/blocks', { signal });
   return normalizeBlocks(blocks, limit);
+}
+
+export async function fetchBlockDetail(blockId, signal, previewLimit = 10) {
+  const normalizedBlockId = String(blockId ?? '').trim().toLowerCase();
+
+  if (!normalizedBlockId || (!isBlockHeight(normalizedBlockId) && !isBlockHash(normalizedBlockId))) {
+    throw createApiError('Invalid block identifier.', 400, `/block/${normalizedBlockId}`, 'api');
+  }
+
+  const blockHash = isBlockHeight(normalizedBlockId)
+    ? await request(`/block-height/${normalizedBlockId}`, { signal, responseType: 'text' })
+    : normalizedBlockId;
+
+  const [block, status, previewTransactions, tipHeightText] = await Promise.all([
+    request(`/block/${blockHash}`, { signal }),
+    request(`/block/${blockHash}/status`, { signal }).catch(() => null),
+    request(`/block/${blockHash}/txs/0`, { signal }).catch(() => []),
+    request('/blocks/tip/height', { signal, responseType: 'text' }).catch(() => null),
+  ]);
+
+  const tipHeight = tipHeightText ? Number(tipHeightText) : null;
+  const normalizedPreviewTransactions = (previewTransactions ?? [])
+    .slice(0, previewLimit)
+    .map((transaction) => normalizeTransaction(transaction, null, tipHeight));
+
+  return normalizeBlockDetails(block, status, tipHeight, normalizedPreviewTransactions);
 }
 
 export async function fetchAddressTransactionsPage(address, lastSeenTxid, signal) {

@@ -22,7 +22,10 @@ import { DEMO_TESTNET_ADDRESS } from '../services/demoAddress';
 import { formatBTC, formatFeeRate, formatSats } from '../utils/formatBTC';
 import { formatDateTime, formatTimestampWithRelative } from '../utils/formatDate';
 import {
+  getAddressRoute,
+  getBlockRoute,
   getAddressExplorerUrl,
+  getTransactionRoute,
   getTransactionExplorerUrl,
 } from '../utils/explorerLinks';
 import { getFeeInsight } from '../utils/feeInsights';
@@ -82,7 +85,12 @@ function AddressField({ address }) {
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
-      <p className="break-all font-mono text-xs leading-6 text-slate-100">{address}</p>
+      <Link
+        to={getAddressRoute(address)}
+        className="break-all font-mono text-xs leading-6 text-slate-100 transition hover:text-brand-sky"
+      >
+        {address}
+      </Link>
       <CopyButton value={address} label="Copy address" compact />
       <a
         href={getAddressExplorerUrl(address)}
@@ -125,7 +133,7 @@ function EndpointRow({ item, index, kind, showWitness }) {
               <p className="font-mono text-xs text-slate-200">{shortenTxid(previousTxid)}</p>
               <CopyButton value={previousTxid} label="Copy previous transaction id" compact />
               <Link
-                to={`/tx/${previousTxid}`}
+                to={getTransactionRoute(previousTxid)}
                 className="inline-flex items-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
               >
                 Open tx
@@ -311,7 +319,7 @@ function TransactionPage() {
 
     if (target.type === 'address') {
       setSearchMessage(null);
-      navigate(`/?address=${target.value}`);
+      navigate(getAddressRoute(target.value));
       return;
     }
 
@@ -326,7 +334,7 @@ function TransactionPage() {
 
   const handleUseDemo = () => {
     setSearchMessage(null);
-    navigate(`/?address=${DEMO_TESTNET_ADDRESS}`);
+    navigate(getAddressRoute(DEMO_TESTNET_ADDRESS));
   };
 
   const handleClear = () => {
@@ -397,6 +405,14 @@ function TransactionPage() {
                     <Badge variant="accent">Dedicated transaction route</Badge>
                     {activeTransaction?.feeRate != null ? (
                       <Badge variant={feeInsight.variant}>{feeInsight.label}</Badge>
+                    ) : null}
+                    {activeTransaction?.status?.block_hash ? (
+                      <Link
+                        to={getBlockRoute(activeTransaction.status.block_hash)}
+                        className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
+                      >
+                        Open block
+                      </Link>
                     ) : null}
                   </div>
                 </Card>
@@ -525,6 +541,14 @@ function TransactionPage() {
                 </motion.div>
 
                 <motion.div variants={listItemReveal} className="mt-6 flex flex-wrap items-center gap-3">
+                  {transactionDetails.status?.block_hash ? (
+                    <Link
+                      to={getBlockRoute(transactionDetails.status.block_hash)}
+                      className="rounded-[20px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/[0.08]"
+                    >
+                      Open containing block
+                    </Link>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => setShowWitness((current) => !current)}

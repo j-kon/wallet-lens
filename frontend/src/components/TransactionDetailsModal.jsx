@@ -4,7 +4,12 @@ import { Blocks, Clock3, ExternalLink, Scale, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatTimestampWithRelative } from '../utils/formatDate';
 import { formatBTC, formatFeeRate, formatSats } from '../utils/formatBTC';
-import { getTransactionExplorerUrl } from '../utils/explorerLinks';
+import {
+  getAddressRoute,
+  getBlockRoute,
+  getTransactionExplorerUrl,
+  getTransactionRoute,
+} from '../utils/explorerLinks';
 import Badge from './UI/Badge';
 import CopyButton from './UI/CopyButton';
 import { Loader } from './UI/Loader';
@@ -31,7 +36,21 @@ function DetailColumn({ title, items, address, kind }) {
               variants={listItemReveal}
               className={`rounded-2xl border p-3 ${highlighted ? 'border-brand-sky/25 bg-brand-sky/10' : 'border-white/8 bg-black/10'}`}
             >
-              <p className="break-all font-mono text-xs leading-6 text-slate-100">{itemAddress}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {itemAddress !== 'Address unavailable' ? (
+                  <Link
+                    to={getAddressRoute(itemAddress)}
+                    className="break-all font-mono text-xs leading-6 text-slate-100 transition hover:text-brand-sky"
+                  >
+                    {itemAddress}
+                  </Link>
+                ) : (
+                  <p className="break-all font-mono text-xs leading-6 text-slate-100">{itemAddress}</p>
+                )}
+                {itemAddress !== 'Address unavailable' ? (
+                  <CopyButton value={itemAddress} label="Copy address" compact />
+                ) : null}
+              </div>
               <div className="mt-3 flex items-center justify-between gap-3 text-sm">
                 <span className="text-slate-400">
                   {item?.txid ? `Source ${item.txid.slice(0, 8)}...` : item?.scriptpubkey_type ?? 'script'}
@@ -114,11 +133,19 @@ function TransactionDetailsModal({
                   {activeTransaction?.txid ? (
                     <>
                       <Link
-                        to={`/tx/${activeTransaction.txid}`}
+                        to={getTransactionRoute(activeTransaction.txid)}
                         className="inline-flex items-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
                       >
                         Full page
                       </Link>
+                      {activeTransaction?.status?.block_hash ? (
+                        <Link
+                          to={getBlockRoute(activeTransaction.status.block_hash)}
+                          className="inline-flex items-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
+                        >
+                          Block page
+                        </Link>
+                      ) : null}
                       <a
                         href={getTransactionExplorerUrl(activeTransaction.txid)}
                         target="_blank"
