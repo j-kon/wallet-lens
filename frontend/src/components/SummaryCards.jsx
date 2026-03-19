@@ -21,7 +21,7 @@ function SummaryCards({ summary }) {
     {
       title: 'Balance',
       value: formatBTC(summary.balance),
-      helper: `Confirmed ${formatBTC(summary.confirmedBalance)} • Mempool ${formatBTC(summary.pendingBalance, { signed: true })}`,
+      helper: `Chain balance ${formatBTC(summary.confirmedBalance)} • Mempool delta ${formatBTC(summary.pendingDelta, { signed: true })}`,
       icon: Landmark,
       tone: 'text-brand-amber',
     },

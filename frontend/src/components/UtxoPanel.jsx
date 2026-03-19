@@ -1,5 +1,5 @@
 import { Coins } from 'lucide-react';
-import { formatBTC } from '../utils/formatBTC';
+import { formatBTC, formatSats } from '../utils/formatBTC';
 import { shortenTxid } from '../utils/shortenTxid';
 import Badge from './UI/Badge';
 import Card from './UI/Card';
@@ -13,9 +13,9 @@ function UtxoPanel({ utxos }) {
       <div className="flex items-start justify-between gap-4 border-b border-white/6 pb-5">
         <div>
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">UTXO Panel</p>
-          <h2 className="mt-2 font-display text-2xl text-slate-50">Spendable output set</h2>
+          <h2 className="mt-2 font-display text-2xl text-slate-50">Spendable outputs</h2>
           <p className="mt-2 text-sm text-slate-400">
-            Inspect individual outputs before they are selected by the wallet.
+            UTXOs are unspent outputs that can be used to build new transactions.
           </p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-brand-sky">
@@ -27,8 +27,8 @@ function UtxoPanel({ utxos }) {
         <div className="pt-6">
           <EmptyState
             icon={Coins}
-            title="No UTXOs available"
-            description="This address currently has no unspent outputs visible on testnet."
+            title="No spendable outputs found"
+            description="UTXOs are unspent outputs that can be used to build new transactions."
           />
         </div>
       ) : (
@@ -55,6 +55,7 @@ function UtxoPanel({ utxos }) {
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Amount</p>
                     <p className="mt-1 font-display text-xl text-slate-50">{formatBTC(utxo.value)}</p>
+                    <p className="mt-1 text-xs text-slate-400">{formatSats(utxo.value)}</p>
                   </div>
                   <p className="text-xs text-slate-400">
                     {utxo.confirmations ? `${utxo.confirmations} confirmations` : 'Awaiting first confirmation'}
@@ -67,6 +68,7 @@ function UtxoPanel({ utxos }) {
           <div className="mt-6 rounded-[22px] border border-brand-amber/15 bg-brand-amber/5 p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Visible UTXO Balance</p>
             <p className="mt-2 font-display text-2xl text-brand-amber">{formatBTC(utxoBalance)}</p>
+            <p className="mt-1 text-sm text-slate-400">{formatSats(utxoBalance)}</p>
           </div>
         </>
       )}

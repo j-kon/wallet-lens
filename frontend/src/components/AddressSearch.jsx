@@ -6,7 +6,7 @@ function AddressSearch({
   value,
   onChange,
   onSubmit,
-  onUseSample,
+  onUseDemo,
   isLoading,
   validationError,
 }) {
@@ -49,11 +49,12 @@ function AddressSearch({
 
           <button
             type="button"
-            onClick={onUseSample}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm font-medium text-slate-200 transition hover:bg-white/[0.06]"
+            onClick={onUseDemo}
+            disabled={isLoading}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm font-medium text-slate-200 transition hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <TestTubeDiagonal className="h-4 w-4 text-brand-sky" />
-            Load sample
+            Try demo address
           </button>
         </div>
       </form>
@@ -63,7 +64,7 @@ function AddressSearch({
           <p className="text-rose-300">{validationError}</p>
         ) : (
           <p className="text-slate-400">
-            Supports Bech32, P2SH, and legacy testnet address formats.
+            WalletLens accepts Bech32 testnet addresses that start with <span className="font-mono text-slate-200">tb1</span>.
           </p>
         )}
       </div>
@@ -75,7 +76,7 @@ function AddressSearch({
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Resilience</p>
-          <p className="mt-2 text-sm text-slate-200">Live Esplora fetches with a portfolio-safe sample dataset fallback.</p>
+          <p className="mt-2 text-sm text-slate-200">Clear invalid, empty, and network states with a one-click demo address for fast verification.</p>
         </div>
       </div>
     </Card>

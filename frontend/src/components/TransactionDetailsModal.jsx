@@ -4,6 +4,7 @@ import { Blocks, Clock3, Scale, X } from 'lucide-react';
 import { formatDateTime } from '../utils/formatDate';
 import { formatBTC, formatFeeRate, formatSats } from '../utils/formatBTC';
 import Badge from './UI/Badge';
+import CopyButton from './UI/CopyButton';
 import { Loader } from './UI/Loader';
 
 function DetailColumn({ title, items, address, kind }) {
@@ -98,12 +99,17 @@ function TransactionDetailsModal({
                     {activeTransaction?.status?.confirmed ? 'Confirmed' : 'Pending'}
                   </Badge>
                   {isLoading ? <Badge variant="accent">Refreshing detail</Badge> : null}
-                  {error ? <Badge variant="warning">Fallback detail</Badge> : null}
+                  {error ? <Badge variant="warning">Network issue</Badge> : null}
                 </div>
                 <h3 className="mt-3 font-display text-2xl text-slate-50">Transaction Details</h3>
-                <p className="mt-2 break-all font-mono text-xs leading-6 text-slate-400 sm:text-sm">
-                  {activeTransaction?.txid}
-                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <p className="break-all font-mono text-xs leading-6 text-slate-400 sm:text-sm">
+                    {activeTransaction?.txid}
+                  </p>
+                  {activeTransaction?.txid ? (
+                    <CopyButton value={activeTransaction.txid} label="Copy full transaction id" compact />
+                  ) : null}
+                </div>
               </div>
 
               <button
@@ -151,9 +157,12 @@ function TransactionDetailsModal({
                   <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-slate-500">
                       <Scale className="h-3.5 w-3.5" />
-                      Net Flow
+                      Wallet Flow
                     </div>
-                    <p className="mt-3 font-display text-2xl text-slate-50">{formatBTC(activeTransaction.netValue, { signed: true })}</p>
+                    <p className="mt-3 font-display text-2xl text-slate-50">
+                      {activeTransaction.direction === 'incoming' ? '+' : activeTransaction.direction === 'outgoing' ? '-' : ''}
+                      {formatBTC(activeTransaction.displayAmount ?? activeTransaction.netValue)}
+                    </p>
                     <p className="mt-2 capitalize text-sm text-slate-400">{activeTransaction.direction}</p>
                   </div>
                 </div>

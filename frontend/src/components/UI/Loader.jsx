@@ -25,3 +25,15 @@ export function Skeleton({ className }) {
     />
   );
 }
+
+export function InlineSpinner({ className }) {
+  return (
+    <span
+      className={cn(
+        'inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-brand-sky',
+        className,
+      )}
+      aria-hidden="true"
+    />
+  );
+}

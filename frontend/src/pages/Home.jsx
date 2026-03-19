@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, DatabaseZap, Radio, Sparkles } from 'lucide-react';
 import AddressSearch from '../components/AddressSearch';
@@ -9,9 +9,11 @@ import TransactionList from '../components/TransactionList';
 import UtxoPanel from '../components/UtxoPanel';
 import Badge from '../components/UI/Badge';
 import Card from '../components/UI/Card';
+import CopyButton from '../components/UI/CopyButton';
 import EmptyState from '../components/UI/EmptyState';
 import { Skeleton } from '../components/UI/Loader';
 import { useAddressData } from '../hooks/useAddressData';
+import { useTxDetails } from '../hooks/useTxDetails';
 
 function DashboardSkeleton() {
   return (
@@ -56,38 +58,37 @@ function Home() {
     wallet,
     requestedAddress,
     loading,
-    error,
-    notice,
-    usingMockData,
+    hasSearched,
+    message,
+    searchAddress,
+    demoAddress,
+  } = useAddressData();
+  const {
     selectedTransaction,
+    selectedTransactionId,
     transactionDetails,
     detailsLoading,
     detailsError,
-    searchAddress,
     openTransaction,
     closeTransaction,
-    sampleAddress,
-  } = useAddressData();
+  } = useTxDetails(wallet?.address);
 
-  const [query, setQuery] = useState(sampleAddress);
-
-  const statusTone = useMemo(
-    () =>
-      usingMockData
-        ? 'border-amber-400/15 bg-amber-400/10 text-amber-100'
-        : 'border-brand-sky/15 bg-brand-sky/10 text-brand-sky',
-    [usingMockData],
-  );
+  const [query, setQuery] = useState('');
 
   const handleSearch = (event) => {
     event.preventDefault();
     searchAddress(query);
   };
 
-  const handleUseSample = () => {
-    setQuery(sampleAddress);
-    searchAddress(sampleAddress);
+  const handleUseDemo = () => {
+    setQuery(demoAddress);
+    searchAddress(demoAddress);
   };
+
+  const messageTone =
+    message?.tone === 'error'
+      ? 'border-rose-400/15 bg-rose-400/10 text-rose-100'
+      : 'border-brand-sky/15 bg-brand-sky/10 text-brand-sky';
 
   return (
     <div className="min-h-screen text-slate-50">
@@ -155,22 +156,16 @@ function Home() {
             value={query}
             onChange={setQuery}
             onSubmit={handleSearch}
-            onUseSample={handleUseSample}
+            onUseDemo={handleUseDemo}
             isLoading={loading}
-            validationError={error}
+            validationError={message?.tone === 'error' ? message.title : ''}
           />
         </motion.section>
 
-        {notice ? (
-          <div className={`mt-8 rounded-[24px] border px-5 py-4 text-sm ${statusTone}`}>
-            <p className="font-medium">
-              {notice}
-            </p>
-            {usingMockData ? (
-              <p className="mt-2 text-amber-100/80">
-                Requested address: <span className="font-mono">{requestedAddress}</span>
-              </p>
-            ) : null}
+        {message && wallet ? (
+          <div className={`mt-8 rounded-[24px] border px-5 py-4 text-sm ${messageTone}`}>
+            <p className="font-medium">{message.title}</p>
+            <p className="mt-2 opacity-90">{message.description}</p>
           </div>
         ) : null}
 
@@ -179,25 +174,21 @@ function Home() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Active Dataset</p>
-                <p className="mt-2 break-all font-mono text-sm leading-7 text-slate-100">
-                  {wallet.address}
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <p className="break-all font-mono text-sm leading-7 text-slate-100">
+                    {wallet.address}
+                  </p>
+                  <CopyButton value={wallet.address} label="Copy address" compact />
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  Live response from Blockstream Esplora testnet.
                 </p>
-                {usingMockData ? (
-                  <p className="mt-2 text-sm text-slate-400">
-                    Sample address loaded because live connectivity is unavailable.
-                  </p>
-                ) : (
-                  <p className="mt-2 text-sm text-slate-400">
-                    Live response from Blockstream Esplora testnet.
-                  </p>
-                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="testnet">{wallet.network}</Badge>
-                <Badge variant={usingMockData ? 'warning' : 'success'}>
-                  {usingMockData ? 'Sample dataset' : 'Live data'}
-                </Badge>
+                <Badge variant="success">Live data</Badge>
+                {requestedAddress === demoAddress ? <Badge variant="accent">Demo address</Badge> : null}
                 <Badge variant="subtle">
                   Updated {new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(new Date(wallet.lastUpdatedAt))}
                 </Badge>
@@ -206,19 +197,19 @@ function Home() {
           </Card>
         ) : null}
 
-        {error && !wallet ? (
+        {message?.tone === 'error' && !wallet ? (
           <div className="mt-8">
             <EmptyState
               icon={AlertTriangle}
-              title="Address lookup failed"
-              description={error}
+              title={message.title}
+              description={message.description}
               action={
                 <button
                   type="button"
-                  onClick={handleUseSample}
+                  onClick={handleUseDemo}
                   className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/[0.08]"
                 >
-                  Load sample dataset
+                  Try demo address
                 </button>
               }
             />
@@ -226,7 +217,7 @@ function Home() {
         ) : null}
 
         <section className="mt-8">
-          {loading ? (
+          {loading && !wallet ? (
             <DashboardSkeleton />
           ) : wallet ? (
             <div className="space-y-6">
@@ -234,6 +225,8 @@ function Home() {
               <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_360px]">
                 <TransactionList
                   transactions={wallet.transactions}
+                  loading={loading}
+                  selectedTransactionId={selectedTransactionId}
                   onSelectTransaction={openTransaction}
                 />
                 <UtxoPanel utxos={wallet.utxos} />
@@ -241,15 +234,19 @@ function Home() {
             </div>
           ) : (
             <EmptyState
-              title="Start with a Bitcoin testnet address"
-              description="Enter an address to inspect balances, transactions, fee rates, and the UTXO set from the Esplora testnet API."
+              title={hasSearched ? 'No wallet loaded' : 'Start with a Bitcoin testnet address'}
+              description={
+                hasSearched
+                  ? 'Try another Bech32 testnet address or load the demo address to inspect real explorer output.'
+                  : 'Enter an address to inspect balances, transactions, fee rates, and the UTXO set from the Esplora testnet API.'
+              }
               action={
                 <button
                   type="button"
-                  onClick={handleUseSample}
+                  onClick={handleUseDemo}
                   className="rounded-2xl border border-brand-amber/20 bg-brand-amber/10 px-4 py-3 text-sm font-medium text-brand-amber transition hover:bg-brand-amber/15"
                 >
-                  Explore sample data
+                  Try demo address
                 </button>
               }
             />

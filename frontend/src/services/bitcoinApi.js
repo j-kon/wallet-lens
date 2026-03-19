@@ -1,24 +1,36 @@
 const BASE_URL = 'https://blockstream.info/testnet/api';
 const TESTNET_ADDRESS_REGEX =
-  /^(tb1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{11,71}|[mn2][1-9A-HJ-NP-Za-km-z]{25,62})$/i;
+  /^tb1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{11,71}$/i;
 
-function createApiError(message, status, path) {
+function createApiError(message, status, path, kind = 'api') {
   const error = new Error(message);
   error.status = status;
   error.path = path;
+  error.kind = kind;
   return error;
 }
 
 async function request(path, { signal, responseType = 'json' } = {}) {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    signal,
-    headers: {
-      Accept: responseType === 'json' ? 'application/json' : 'text/plain',
-    },
-  });
+  let response;
+
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      signal,
+      headers: {
+        Accept: responseType === 'json' ? 'application/json' : 'text/plain',
+      },
+    });
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw error;
+    }
+
+    throw createApiError('Unable to fetch data from network.', null, path, 'network');
+  }
 
   if (!response.ok) {
-    throw createApiError(`Esplora request failed for ${path}.`, response.status, path);
+    const kind = response.status >= 500 ? 'network' : 'api';
+    throw createApiError(`Esplora request failed for ${path}.`, response.status, path, kind);
   }
 
   if (responseType === 'text') {
@@ -55,7 +67,41 @@ function getValueFlowForAddress(collection, address, pickValue) {
 }
 
 export function validateTestnetAddress(address) {
-  return TESTNET_ADDRESS_REGEX.test(address.trim());
+  return TESTNET_ADDRESS_REGEX.test(address.trim().toLowerCase());
+}
+
+function getAddressPresence(collection, address) {
+  if (!address) {
+    return false;
+  }
+
+  return collection.some((entry) => {
+    const entryAddress =
+      entry?.scriptpubkey_address ??
+      entry?.prevout?.scriptpubkey_address;
+
+    return entryAddress === address;
+  });
+}
+
+function getTransactionDirection({ hasAddressInputs, hasAddressOutputs }) {
+  if (hasAddressInputs) {
+    return 'outgoing';
+  }
+
+  if (hasAddressOutputs) {
+    return 'incoming';
+  }
+
+  return 'neutral';
+}
+
+function getDisplayAmount({ direction, netValue, receivedValue }) {
+  if (direction === 'incoming') {
+    return receivedValue;
+  }
+
+  return Math.abs(netValue);
 }
 
 export function normalizeTransaction(tx, address, tipHeight) {
@@ -69,9 +115,13 @@ export function normalizeTransaction(tx, address, tipHeight) {
     address,
     (entry) => entry?.value ?? 0,
   );
+  const hasAddressInputs = getAddressPresence(tx.vin ?? [], address);
+  const hasAddressOutputs = getAddressPresence(tx.vout ?? [], address);
   const netValue = receivedValue - sentValue;
-  const direction =
-    netValue > 0 ? 'incoming' : netValue < 0 ? 'outgoing' : 'internal';
+  const direction = getTransactionDirection({
+    hasAddressInputs,
+    hasAddressOutputs,
+  });
   const vsize = tx.vsize ?? (tx.weight ? Math.ceil(tx.weight / 4) : tx.size ?? null);
   const feeRate = tx.fee != null && vsize ? tx.fee / vsize : null;
 
@@ -83,6 +133,9 @@ export function normalizeTransaction(tx, address, tipHeight) {
     receivedValue,
     netValue,
     direction,
+    displayAmount: getDisplayAmount({ direction, netValue, receivedValue }),
+    hasAddressInputs,
+    hasAddressOutputs,
     confirmations: calculateConfirmations(tx.status, tipHeight),
   };
 }
@@ -95,12 +148,14 @@ function normalizeUtxo(utxo, tipHeight) {
 }
 
 function normalizeWalletSnapshot(address, addressInfo, transactions, utxos, tipHeight) {
+  const chainStats = addressInfo?.chain_stats ?? {};
+  const mempoolStats = addressInfo?.mempool_stats ?? {};
   const confirmedBalance =
-    (addressInfo?.chain_stats?.funded_txo_sum ?? 0) -
-    (addressInfo?.chain_stats?.spent_txo_sum ?? 0);
-  const pendingBalance =
-    (addressInfo?.mempool_stats?.funded_txo_sum ?? 0) -
-    (addressInfo?.mempool_stats?.spent_txo_sum ?? 0);
+    (chainStats.funded_txo_sum ?? 0) -
+    (chainStats.spent_txo_sum ?? 0);
+  const pendingDelta =
+    (mempoolStats.funded_txo_sum ?? 0) -
+    (mempoolStats.spent_txo_sum ?? 0);
 
   return {
     source: 'live',
@@ -110,20 +165,14 @@ function normalizeWalletSnapshot(address, addressInfo, transactions, utxos, tipH
     tipHeight,
     lastUpdatedAt: new Date().toISOString(),
     summary: {
-      balance: confirmedBalance + pendingBalance,
+      balance: confirmedBalance,
       confirmedBalance,
-      pendingBalance,
-      totalReceived:
-        (addressInfo?.chain_stats?.funded_txo_sum ?? 0) +
-        (addressInfo?.mempool_stats?.funded_txo_sum ?? 0),
-      totalSent:
-        (addressInfo?.chain_stats?.spent_txo_sum ?? 0) +
-        (addressInfo?.mempool_stats?.spent_txo_sum ?? 0),
-      transactionCount:
-        (addressInfo?.chain_stats?.tx_count ?? 0) +
-        (addressInfo?.mempool_stats?.tx_count ?? 0),
-      confirmedTransactions: addressInfo?.chain_stats?.tx_count ?? 0,
-      pendingTransactions: addressInfo?.mempool_stats?.tx_count ?? 0,
+      pendingDelta,
+      totalReceived: chainStats.funded_txo_sum ?? 0,
+      totalSent: chainStats.spent_txo_sum ?? 0,
+      transactionCount: (chainStats.tx_count ?? 0) + (mempoolStats.tx_count ?? 0),
+      confirmedTransactions: chainStats.tx_count ?? 0,
+      pendingTransactions: mempoolStats.tx_count ?? 0,
     },
     transactions: (transactions ?? []).map((tx) =>
       normalizeTransaction(tx, address, tipHeight),
