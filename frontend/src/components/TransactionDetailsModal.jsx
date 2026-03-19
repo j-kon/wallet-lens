@@ -40,7 +40,6 @@ function DetailColumn({ title, items, address, kind }) {
                 {itemAddress !== 'Address unavailable' ? (
                   <Link
                     to={getAddressRoute(itemAddress)}
-                    onClick={() => console.log('[WalletLens] Navigating to address:', itemAddress)}
                     className="break-all font-mono text-xs leading-6 text-slate-100 transition hover:text-brand-sky"
                   >
                     {itemAddress}
@@ -135,7 +134,6 @@ function TransactionDetailsModal({
                     <>
                       <Link
                         to={getTransactionRoute(activeTransaction.txid)}
-                        onClick={() => console.log('[WalletLens] Navigating to tx:', activeTransaction.txid)}
                         className="inline-flex items-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
                       >
                         Full page
@@ -143,7 +141,6 @@ function TransactionDetailsModal({
                       {activeTransaction?.status?.block_hash ? (
                         <Link
                           to={getBlockRoute(activeTransaction.status.block_hash)}
-                          onClick={() => console.log('[WalletLens] Navigating to block:', activeTransaction.status.block_hash)}
                           className="inline-flex items-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
                         >
                           Block page

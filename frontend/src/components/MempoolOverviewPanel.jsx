@@ -71,7 +71,7 @@ function MempoolOverviewPanel({ mempool, loading, error }) {
         </div>
 
         {loading ? (
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 space-y-2.5">
             {[...Array(3)].map((_, index) => (
               <div key={index} className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3.5">
                 <Skeleton className="h-4 w-20" />
@@ -89,7 +89,7 @@ function MempoolOverviewPanel({ mempool, loading, error }) {
               initial="hidden"
               animate="visible"
               variants={softStagger}
-              className="mt-5 space-y-2.5"
+              className="mt-4 space-y-2.5"
             >
               <Metric
                 label="Transactions"
@@ -113,7 +113,7 @@ function MempoolOverviewPanel({ mempool, loading, error }) {
                 initial="hidden"
                 animate="visible"
                 variants={softStagger}
-                className="mt-5 rounded-[22px] border border-white/8 bg-white/[0.03] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+                className="mt-4 rounded-[22px] border border-white/8 bg-white/[0.03] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
               >
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Fee Histogram</p>

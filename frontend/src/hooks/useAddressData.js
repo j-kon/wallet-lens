@@ -88,6 +88,12 @@ export function useAddressData({ restoreOnMount = true } = {}) {
     setHasSearched(true);
     setRequestedAddress(trimmedAddress);
     setMessage(null);
+    setLoadingMoreTransactions(false);
+    setHasMoreTransactions(false);
+    setLoading(false);
+    setWallet((currentWallet) => (
+      currentWallet?.address === trimmedAddress ? currentWallet : null
+    ));
 
     if (!trimmedAddress || !validateTestnetAddress(trimmedAddress)) {
       setWallet(null);

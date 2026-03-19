@@ -29,7 +29,7 @@ function TransactionList({
   return (
     <motion.div initial="hidden" animate="visible" variants={fadeUp}>
       <Card className="p-5 lg:p-6">
-        <div className="flex flex-col gap-4 border-b border-white/6 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3.5 border-b border-white/6 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Transaction History</p>
             <h2 className="mt-2 font-display text-[1.7rem] tracking-[-0.04em] text-slate-50">
@@ -88,7 +88,7 @@ function TransactionList({
         {totalEntries > 0 ? (
           <motion.div
             variants={listItemReveal}
-            className="mt-4 flex flex-col gap-3 rounded-[22px] border border-white/8 bg-black/10 px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:flex-row sm:items-center sm:justify-between"
+            className="mt-3.5 flex flex-col gap-3 rounded-[22px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(10,14,22,0.18))] px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:flex-row sm:items-center sm:justify-between"
           >
             <div>
               <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Net Flow</p>
@@ -96,8 +96,8 @@ function TransactionList({
                 Across the transactions currently loaded into the explorer.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <p className={`font-display text-[1.7rem] ${netFlowTone}`}>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <p className={`font-display text-[1.6rem] ${netFlowTone}`}>
                 {netFlow > 0 ? '+' : netFlow < 0 ? '-' : ''}
                 {formatBTC(Math.abs(netFlow))}
               </p>
@@ -125,12 +125,7 @@ function TransactionList({
             </div>
           </div>
         ) : (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={softStagger}
-            className="mt-5 space-y-2.5"
-          >
+          <motion.div initial="hidden" animate="visible" variants={softStagger} className="mt-4.5 space-y-2.5">
             {transactions.map((transaction) => (
               <motion.div key={transaction.txid} variants={listItemReveal}>
                 <TransactionCard
@@ -147,7 +142,7 @@ function TransactionList({
         {transactions.length > 0 ? (
           <motion.div
             variants={listItemReveal}
-            className="mt-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between"
+            className="mt-4.5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between"
           >
             <p className="text-sm text-slate-400">
               {hasMoreTransactions

@@ -102,18 +102,32 @@ function Home() {
     detailsError,
     openTransaction,
     closeTransaction,
-  } = useTxDetails(wallet?.address);
+  } = useTxDetails(routedAddress || wallet?.address || null);
   const { feeBands, feeEstimatesLoading, feeEstimatesError } = useFeeEstimates();
   const { mempool, mempoolLoading, mempoolError } = useMempoolData();
   const { blocks, blocksLoading, blocksError } = useBlocks(5);
   useDocumentTitle(routedAddress ? 'WalletLens · Address' : 'WalletLens');
+
+  const activeWallet = routedAddress
+    ? wallet?.address === routedAddress
+      ? wallet
+      : null
+    : wallet;
+  const isDashboardLoading = loading && !activeWallet;
+
+  useEffect(() => {
+    if (!routedAddressParam || !routedAddress || routedAddressParam === routedAddress) {
+      return;
+    }
+
+    navigate(getAddressRoute(routedAddress), { replace: true });
+  }, [navigate, routedAddress, routedAddressParam]);
 
   useEffect(() => {
     if (routedAddress || !wallet?.address) {
       return;
     }
 
-    console.log('[WalletLens] Navigating to restored address:', wallet.address);
     navigate(getAddressRoute(wallet.address), { replace: true });
   }, [navigate, routedAddress, wallet?.address]);
 
@@ -137,19 +151,16 @@ function Home() {
       setQuery(target.value);
 
       if (target.value === routedAddress && target.value === requestedAddress) {
-        console.log('[WalletLens] Refreshing address route:', target.value);
         searchAddress(target.value, { immediate: true });
         return;
       }
 
-      console.log('[WalletLens] Navigating to address:', target.value);
       navigate(getAddressRoute(target.value));
       return;
     }
 
     if (target.type === 'txid') {
       setLocalSearchMessage(null);
-      console.log('[WalletLens] Navigating to tx:', target.value);
       navigate(getTransactionRoute(target.value));
       return;
     }
@@ -162,12 +173,10 @@ function Home() {
     setQuery(demoAddress);
 
     if (demoAddress === routedAddress && demoAddress === requestedAddress) {
-      console.log('[WalletLens] Refreshing demo address:', demoAddress);
       searchAddress(demoAddress, { immediate: true });
       return;
     }
 
-    console.log('[WalletLens] Navigating to demo address:', demoAddress);
     navigate(getAddressRoute(demoAddress));
   };
 
@@ -270,7 +279,7 @@ function Home() {
           />
         </motion.section>
 
-        {message && wallet ? (
+        {message && activeWallet ? (
           <motion.div
             initial="hidden"
             animate="visible"
@@ -282,7 +291,7 @@ function Home() {
           </motion.div>
         ) : null}
 
-        {wallet ? (
+        {activeWallet ? (
           <motion.div initial="hidden" animate="visible" variants={fadeUp}>
             <Card className="mt-6 p-4 lg:p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -290,9 +299,9 @@ function Home() {
                   <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Active Dataset</p>
                   <div className="mt-2 flex flex-wrap items-center gap-3">
                     <p className="break-all font-mono text-sm leading-7 text-slate-100">
-                      {wallet.address}
+                      {activeWallet.address}
                     </p>
-                    <CopyButton value={wallet.address} label="Copy address" compact />
+                    <CopyButton value={activeWallet.address} label="Copy address" compact />
                   </div>
                   <p className="mt-2 text-sm text-slate-400">
                     Live address snapshot from Blockstream Esplora testnet, including chain and mempool activity.
@@ -300,14 +309,14 @@ function Home() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="testnet">{wallet.network}</Badge>
+                  <Badge variant="testnet">{activeWallet.network}</Badge>
                   <Badge variant="success">Live data</Badge>
-                  {wallet.pendingTransactions?.length ? (
-                    <Badge variant="warning">{wallet.pendingTransactions.length} mempool</Badge>
+                  {activeWallet.pendingTransactions?.length ? (
+                    <Badge variant="warning">{activeWallet.pendingTransactions.length} mempool</Badge>
                   ) : null}
                   {requestedAddress === demoAddress ? <Badge variant="accent">Demo address</Badge> : null}
                   <Link
-                    to={getAddressRoute(wallet.address)}
+                    to={getAddressRoute(activeWallet.address)}
                     className="inline-flex items-center gap-2 rounded-[20px] border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:text-white"
                   >
                     Address page
@@ -317,7 +326,7 @@ function Home() {
                     {new Intl.DateTimeFormat('en-US', {
                       hour: '2-digit',
                       minute: '2-digit',
-                    }).format(new Date(wallet.lastUpdatedAt))}
+                    }).format(new Date(activeWallet.lastUpdatedAt))}
                   </Badge>
                 </div>
               </div>
@@ -325,7 +334,7 @@ function Home() {
           </motion.div>
         ) : null}
 
-        {displayMessage?.tone === 'error' && !wallet ? (
+        {displayMessage?.tone === 'error' && !activeWallet ? (
           <div className="mt-8">
             <EmptyState
               icon={AlertTriangle}
@@ -345,26 +354,26 @@ function Home() {
         ) : null}
 
         <section className="mt-6">
-          {loading && !wallet ? (
+          {isDashboardLoading ? (
             <DashboardSkeleton />
-          ) : wallet ? (
+          ) : activeWallet ? (
             <motion.div initial="hidden" animate="visible" variants={softStagger} className="space-y-4">
-              <SummaryCards summary={wallet.summary} />
-              <AddressMetadataPanel address={wallet.address} metadata={wallet.metadata} />
+              <SummaryCards summary={activeWallet.summary} />
+              <AddressMetadataPanel address={activeWallet.address} metadata={activeWallet.metadata} />
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_340px]">
                 <TransactionList
-                  transactions={wallet.transactions}
-                  pendingTransactions={wallet.pendingTransactions}
+                  transactions={activeWallet.transactions}
+                  pendingTransactions={activeWallet.pendingTransactions}
                   feeBands={feeBands}
                   loading={loading}
                   loadingMoreTransactions={loadingMoreTransactions}
                   hasMoreTransactions={hasMoreTransactions}
                   onLoadMoreTransactions={loadMoreTransactions}
-                  netFlow={wallet.netFlow}
+                  netFlow={activeWallet.netFlow}
                   selectedTransactionId={selectedTransactionId}
                   onSelectTransaction={openTransaction}
                 />
-                <UtxoPanel utxos={wallet.utxos} />
+                <UtxoPanel utxos={activeWallet.utxos} />
               </div>
             </motion.div>
           ) : (
@@ -388,7 +397,7 @@ function Home() {
           )}
         </section>
 
-        <section className={wallet ? 'mt-6' : 'mt-8'}>
+        <section className={activeWallet ? 'mt-5' : 'mt-8'}>
           <motion.div initial="hidden" animate="visible" variants={softStagger} className="space-y-4">
             <motion.div variants={getReveal({ y: 16, duration: 0.42 })}>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -409,20 +418,18 @@ function Home() {
               </div>
             </motion.div>
 
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.95fr)] xl:items-start">
-              <div className="grid gap-4 md:grid-cols-2 xl:items-start">
-                <FeeEstimatesPanel
-                  feeBands={feeBands}
-                  loading={feeEstimatesLoading}
-                  error={feeEstimatesError}
-                />
-                <MempoolOverviewPanel
-                  mempool={mempool}
-                  loading={mempoolLoading}
-                  error={mempoolError}
-                />
-              </div>
-              <div className="xl:self-start">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1fr)_minmax(0,1.18fr)] xl:items-start">
+              <FeeEstimatesPanel
+                feeBands={feeBands}
+                loading={feeEstimatesLoading}
+                error={feeEstimatesError}
+              />
+              <MempoolOverviewPanel
+                mempool={mempool}
+                loading={mempoolLoading}
+                error={mempoolError}
+              />
+              <div className="md:col-span-2 xl:col-span-1 xl:self-start">
                 <LatestBlocksPanel
                   blocks={blocks}
                   loading={blocksLoading}
@@ -438,7 +445,7 @@ function Home() {
         isOpen={Boolean(selectedTransaction)}
         transaction={selectedTransaction}
         details={transactionDetails}
-        address={wallet?.address}
+        address={activeWallet?.address}
         isLoading={detailsLoading}
         error={detailsError}
         onClose={closeTransaction}

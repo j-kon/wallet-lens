@@ -41,8 +41,10 @@ export function useTxDetails(address) {
       const resolvedTxid = txid?.trim().toLowerCase() ?? '';
       const resolvedAddress = addressOverride ?? address ?? null;
 
+      abortRef.current?.abort();
       setSelectedTransaction(previewTransaction ?? (resolvedTxid ? { txid: resolvedTxid } : null));
       setTransactionDetails(previewTransaction);
+      setLoading(false);
       setError('');
       setTransactionHex('');
       setHexError('');
@@ -63,7 +65,6 @@ export function useTxDetails(address) {
         return;
       }
 
-      abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
@@ -106,6 +107,8 @@ export function useTxDetails(address) {
 
   const loadTransactionHexById = useCallback(async (txid) => {
     const resolvedTxid = txid?.trim().toLowerCase() ?? '';
+    hexAbortRef.current?.abort();
+    setHexLoading(false);
     setHexError('');
 
     if (!resolvedTxid || !validateTransactionId(resolvedTxid)) {
@@ -121,7 +124,6 @@ export function useTxDetails(address) {
       return;
     }
 
-    hexAbortRef.current?.abort();
     const controller = new AbortController();
     hexAbortRef.current = controller;
     setHexLoading(true);

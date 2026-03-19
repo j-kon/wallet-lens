@@ -89,7 +89,6 @@ function AddressField({ address }) {
     <div className="mt-2 flex flex-wrap items-center gap-2">
       <Link
         to={getAddressRoute(address)}
-        onClick={() => console.log('[WalletLens] Navigating to address:', address)}
         className="break-all font-mono text-xs leading-6 text-slate-100 transition hover:text-brand-sky"
       >
         {address}
@@ -137,7 +136,6 @@ function EndpointRow({ item, index, kind, showWitness }) {
               <CopyButton value={previousTxid} label="Copy previous transaction id" compact />
               <Link
                 to={getTransactionRoute(previousTxid)}
-                onClick={() => console.log('[WalletLens] Navigating to tx:', previousTxid)}
                 className="inline-flex items-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
               >
                 Open tx
@@ -296,6 +294,14 @@ function TransactionPage() {
   const pageError = detailsError ? getTransactionErrorCopy(detailsError) : null;
 
   useEffect(() => {
+    if (!routeTxid || routeTxid === normalizedTxid) {
+      return;
+    }
+
+    navigate(getTransactionRoute(normalizedTxid), { replace: true });
+  }, [navigate, normalizedTxid, routeTxid]);
+
+  useEffect(() => {
     setQuery(normalizedTxid);
     setSearchMessage(null);
     setShowRawHex(false);
@@ -324,14 +330,18 @@ function TransactionPage() {
 
     if (target.type === 'address') {
       setSearchMessage(null);
-      console.log('[WalletLens] Navigating to address:', target.value);
       navigate(getAddressRoute(target.value));
       return;
     }
 
     if (target.type === 'txid') {
       setSearchMessage(null);
-      console.log('[WalletLens] Navigating to tx:', target.value);
+
+      if (target.value === normalizedTxid) {
+        loadTransactionById(target.value);
+        return;
+      }
+
       navigate(getTransactionRoute(target.value));
       return;
     }
@@ -341,7 +351,6 @@ function TransactionPage() {
 
   const handleUseDemo = () => {
     setSearchMessage(null);
-    console.log('[WalletLens] Navigating to demo address:', DEMO_TESTNET_ADDRESS);
     navigate(getAddressRoute(DEMO_TESTNET_ADDRESS));
   };
 
@@ -364,7 +373,6 @@ function TransactionPage() {
           <motion.div variants={getReveal({ y: 20, duration: 0.56 })} className="py-4">
             <Link
               to={getHomeRoute()}
-              onClick={() => console.log('[WalletLens] Navigating to home')}
               className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-slate-200"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -418,7 +426,6 @@ function TransactionPage() {
                     {activeTransaction?.status?.block_hash ? (
                       <Link
                         to={getBlockRoute(activeTransaction.status.block_hash)}
-                        onClick={() => console.log('[WalletLens] Navigating to block:', activeTransaction.status.block_hash)}
                         className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
                       >
                         Open block
@@ -554,7 +561,6 @@ function TransactionPage() {
                   {transactionDetails.status?.block_hash ? (
                     <Link
                       to={getBlockRoute(transactionDetails.status.block_hash)}
-                      onClick={() => console.log('[WalletLens] Navigating to block:', transactionDetails.status.block_hash)}
                       className="rounded-[20px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/[0.08]"
                     >
                       Open containing block

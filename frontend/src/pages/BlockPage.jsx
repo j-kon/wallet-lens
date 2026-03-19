@@ -89,7 +89,6 @@ function ChainLinkCard({ label, blockHash, helper }) {
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Link
             to={getBlockRoute(blockHash)}
-            onClick={() => console.log('[WalletLens] Navigating to block:', blockHash)}
             className="font-mono text-sm text-slate-100 transition hover:text-brand-sky"
           >
             {shortenTxid(blockHash)}
@@ -116,7 +115,6 @@ function BlockTransactionRow({ transaction, blockTimestamp }) {
           <div className="flex flex-wrap items-center gap-2">
             <Link
               to={getTransactionRoute(transaction.txid)}
-              onClick={() => console.log('[WalletLens] Navigating to tx:', transaction.txid)}
               className="truncate font-mono text-sm text-slate-100 transition hover:text-brand-sky"
             >
               {shortenTxid(transaction.txid)}
@@ -198,6 +196,14 @@ function BlockPage() {
   useDocumentTitle('WalletLens · Block');
 
   useEffect(() => {
+    if (!routeBlockId || routeBlockId === normalizedBlockId) {
+      return;
+    }
+
+    navigate(getBlockRoute(normalizedBlockId), { replace: true });
+  }, [navigate, normalizedBlockId, routeBlockId]);
+
+  useEffect(() => {
     setSearchMessage(null);
   }, [normalizedBlockId]);
 
@@ -208,14 +214,12 @@ function BlockPage() {
 
     if (target.type === 'address') {
       setSearchMessage(null);
-      console.log('[WalletLens] Navigating to address:', target.value);
       navigate(getAddressRoute(target.value));
       return;
     }
 
     if (target.type === 'txid') {
       setSearchMessage(null);
-      console.log('[WalletLens] Navigating to tx:', target.value);
       navigate(getTransactionRoute(target.value));
       return;
     }
@@ -225,7 +229,6 @@ function BlockPage() {
 
   const handleUseDemo = () => {
     setSearchMessage(null);
-    console.log('[WalletLens] Navigating to demo address:', DEMO_TESTNET_ADDRESS);
     navigate(getAddressRoute(DEMO_TESTNET_ADDRESS));
   };
 
@@ -248,7 +251,6 @@ function BlockPage() {
           <motion.div variants={getReveal({ y: 20, duration: 0.56 })} className="py-4">
             <Link
               to={getHomeRoute()}
-              onClick={() => console.log('[WalletLens] Navigating to home')}
               className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-slate-200"
             >
               <ArrowLeft className="h-4 w-4" />

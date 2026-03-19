@@ -27,6 +27,7 @@ export function useBlockDetails(blockId, previewLimit = 10) {
     }
 
     const controller = new AbortController();
+    setBlock(null);
     setLoading(true);
     setError('');
 

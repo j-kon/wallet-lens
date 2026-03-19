@@ -49,7 +49,7 @@ function TransactionCard({ transaction, feeBands, onSelect, selected }) {
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onClick={() => onSelect(transaction)}
-      className={`group relative w-full cursor-pointer overflow-hidden rounded-[24px] border p-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-sky/35 ${
+      className={`group relative w-full cursor-pointer overflow-hidden rounded-[24px] border p-3.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-sky/35 ${
         selected
           ? 'border-brand-sky/45 bg-[linear-gradient(180deg,rgba(142,178,198,0.12),rgba(18,26,38,0.82))] shadow-[0_20px_60px_rgba(9,15,24,0.44),0_0_0_1px_rgba(142,178,198,0.16),0_0_36px_rgba(142,178,198,0.14)]'
           : 'border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.02))] hover:border-white/15 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))]'
@@ -69,7 +69,7 @@ function TransactionCard({ transaction, feeBands, onSelect, selected }) {
         />
       ) : null}
 
-      <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="relative flex flex-col gap-3.5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
@@ -93,7 +93,6 @@ function TransactionCard({ transaction, feeBands, onSelect, selected }) {
                 to={getTransactionRoute(transaction.txid)}
                 onClick={(event) => {
                   event.stopPropagation();
-                  console.log('[WalletLens] Navigating to tx:', transaction.txid);
                 }}
                 className="inline-flex h-9 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:text-white"
               >
@@ -120,7 +119,7 @@ function TransactionCard({ transaction, feeBands, onSelect, selected }) {
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <Badge variant={transaction.status?.confirmed ? 'success' : 'warning'}>
               {transaction.status?.confirmed ? 'Confirmed' : 'Pending'}
             </Badge>
@@ -134,17 +133,17 @@ function TransactionCard({ transaction, feeBands, onSelect, selected }) {
         </div>
 
         <div className="text-left lg:w-52 lg:text-right">
-          <p className={`font-display text-[1.75rem] tracking-[-0.04em] ${direction.tone}`}>
+          <p className={`font-display text-[1.65rem] tracking-[-0.04em] ${direction.tone}`}>
             {directionPrefix}
             {formatBTC(transaction.displayAmount)}
           </p>
-          <p className="mt-1.5 text-sm leading-6 text-slate-400">
+          <p className="mt-1 text-sm leading-6 text-slate-400">
             {formatTimestampWithRelative(transaction.status?.block_time)}
           </p>
         </div>
       </div>
 
-      <div className="relative mt-4 grid gap-3 text-sm text-slate-400 sm:grid-cols-3">
+      <div className="relative mt-3.5 grid gap-2.5 text-sm text-slate-400 sm:grid-cols-3">
         <div>
           <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Fee</p>
           <p className="mt-1 text-slate-200">{formatSats(transaction.fee)}</p>

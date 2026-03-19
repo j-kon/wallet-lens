@@ -41,7 +41,6 @@ function AddressMetadataPanel({ address, metadata }) {
             <Badge variant="testnet">Testnet</Badge>
             <Link
               to={getAddressRoute(address)}
-              onClick={() => console.log('[WalletLens] Navigating to address:', address)}
               className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
             >
               Open address page

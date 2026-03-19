@@ -32,7 +32,7 @@ function LatestBlocksPanel({ blocks, loading, error }) {
         </div>
 
         {loading ? (
-          <div className="mt-5 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-1">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-1">
             {[...Array(5)].map((_, index) => (
               <div key={index} className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3.5">
                 <Skeleton className="h-4 w-16" />
@@ -50,7 +50,7 @@ function LatestBlocksPanel({ blocks, loading, error }) {
             initial="hidden"
             animate="visible"
             variants={softStagger}
-            className="mt-5 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-1"
+            className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-1"
           >
             {blocks.slice(0, 5).map((block) => (
               <motion.div
@@ -71,7 +71,6 @@ function LatestBlocksPanel({ blocks, loading, error }) {
                       <Badge variant="accent">{formatNumber(block.txCount)} txs</Badge>
                       <Link
                         to={getBlockRoute(block.id)}
-                        onClick={() => console.log('[WalletLens] Navigating to block:', block.id)}
                         className="inline-flex h-8 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-sky/25"
                       >
                         Open block

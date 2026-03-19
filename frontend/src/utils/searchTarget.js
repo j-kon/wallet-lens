@@ -25,7 +25,7 @@ export function detectSearchTarget(input = '') {
     };
   }
 
-  if (normalizedInput.length === 64) {
+  if (validateTxid(normalizedInput)) {
     return {
       type: 'txid',
       value: normalizedInput,

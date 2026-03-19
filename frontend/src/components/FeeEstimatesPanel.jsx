@@ -54,7 +54,7 @@ function FeeEstimatesPanel({ feeBands, loading, error }) {
         </div>
 
         {loading ? (
-          <div className="mt-5 space-y-2.5">
+          <div className="mt-4 space-y-2.5">
             {[...Array(3)].map((_, index) => (
               <div key={index} className="rounded-[22px] border border-white/8 bg-white/[0.03] px-3.5 py-3">
                 <div className="flex items-center justify-between gap-4">
@@ -73,7 +73,7 @@ function FeeEstimatesPanel({ feeBands, loading, error }) {
             initial="hidden"
             animate="visible"
             variants={softStagger}
-            className="mt-5 space-y-2.5"
+            className="mt-4 space-y-2.5"
           >
             <FeeBandCard label="Fast" target={feeBands?.fast} helper="1 block" tone="text-emerald-300" />
             <FeeBandCard label="Medium" target={feeBands?.medium} helper="3-6 blocks" tone="text-brand-sky" />
@@ -81,7 +81,7 @@ function FeeEstimatesPanel({ feeBands, loading, error }) {
           </motion.div>
         )}
 
-        <div className="mt-4 rounded-[20px] border border-white/8 bg-black/10 px-3.5 py-3 text-sm text-slate-400">
+        <div className="mt-3.5 rounded-[20px] border border-white/8 bg-black/10 px-3.5 py-3 text-sm text-slate-400">
           <div className="flex items-start gap-2">
             <TimerReset className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
             <p>These estimates are useful as a benchmark, not a guarantee of confirmation timing.</p>
