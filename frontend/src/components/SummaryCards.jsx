@@ -1,25 +1,16 @@
 import { motion } from 'framer-motion';
 import { ArrowDownToLine, ArrowUpFromLine, Landmark, Rows3 } from 'lucide-react';
 import { formatBTC, formatSats } from '../utils/formatBTC';
+import AnimatedValue from './UI/AnimatedValue';
 import Card from './UI/Card';
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: (index) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: index * 0.06,
-      duration: 0.34,
-      ease: [0.22, 1, 0.36, 1],
-    },
-  }),
-};
+import { hoverLift, listItemReveal, softStagger } from '../utils/motion';
 
 function SummaryCards({ summary }) {
   const cards = [
     {
       title: 'Balance',
+      rawValue: summary.balance,
+      formatter: (value) => formatBTC(value),
       value: formatBTC(summary.balance),
       helper: `Chain balance ${formatBTC(summary.confirmedBalance)} • Mempool delta ${formatBTC(summary.pendingDelta, { signed: true })}`,
       icon: Landmark,
@@ -27,6 +18,8 @@ function SummaryCards({ summary }) {
     },
     {
       title: 'Total Received',
+      rawValue: summary.totalReceived,
+      formatter: (value) => formatBTC(value),
       value: formatBTC(summary.totalReceived),
       helper: formatSats(summary.totalReceived),
       icon: ArrowDownToLine,
@@ -34,6 +27,8 @@ function SummaryCards({ summary }) {
     },
     {
       title: 'Total Sent',
+      rawValue: summary.totalSent,
+      formatter: (value) => formatBTC(value),
       value: formatBTC(summary.totalSent),
       helper: formatSats(summary.totalSent),
       icon: ArrowUpFromLine,
@@ -41,6 +36,8 @@ function SummaryCards({ summary }) {
     },
     {
       title: 'Transaction Count',
+      rawValue: summary.transactionCount,
+      formatter: (value) => new Intl.NumberFormat('en-US').format(value),
       value: new Intl.NumberFormat('en-US').format(summary.transactionCount),
       helper: `${summary.confirmedTransactions} confirmed • ${summary.pendingTransactions} pending`,
       icon: Rows3,
@@ -49,22 +46,30 @@ function SummaryCards({ summary }) {
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {cards.map(({ title, value, helper, icon: Icon, tone }, index) => (
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={softStagger}
+      className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+    >
+      {cards.map(({ title, rawValue, formatter, helper, icon: Icon, tone }) => (
         <motion.div
           key={title}
-          custom={index}
-          initial="hidden"
-          animate="visible"
-          variants={itemVariants}
+          variants={listItemReveal}
+          whileHover={hoverLift}
+          className="h-full"
         >
-          <Card className="h-full p-5">
+          <Card className="h-full p-5 lg:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500">{title}</p>
-                <p className="mt-4 font-display text-3xl tracking-tight text-slate-50">{value}</p>
+                <AnimatedValue
+                  value={rawValue}
+                  formatter={formatter}
+                  className="mt-4 block font-display text-[2rem] tracking-[-0.04em] text-slate-50 lg:text-[2.2rem]"
+                />
               </div>
-              <div className={`rounded-2xl border border-white/10 bg-white/[0.04] p-3 ${tone}`}>
+              <div className={`rounded-[20px] border border-white/10 bg-white/[0.05] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${tone}`}>
                 <Icon className="h-5 w-5" />
               </div>
             </div>
@@ -72,7 +77,7 @@ function SummaryCards({ summary }) {
           </Card>
         </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 

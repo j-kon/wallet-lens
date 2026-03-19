@@ -48,7 +48,6 @@ export function formatRelativeTime(timestamp) {
     { seconds: Number.POSITIVE_INFINITY, unit: 'year' },
   ];
 
-  let divisor = 1;
   let unit = 'second';
 
   for (const range of ranges) {
@@ -57,8 +56,6 @@ export function formatRelativeTime(timestamp) {
     if (absoluteSeconds < range.seconds) {
       break;
     }
-
-    divisor = range.seconds;
   }
 
   const value =

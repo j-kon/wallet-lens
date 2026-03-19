@@ -6,6 +6,7 @@ import { getTransactionExplorerUrl } from '../utils/explorerLinks';
 import { shortenTxid } from '../utils/shortenTxid';
 import Badge from './UI/Badge';
 import CopyButton from './UI/CopyButton';
+import { hoverLift } from '../utils/motion';
 
 const directionStyles = {
   incoming: {
@@ -32,23 +33,35 @@ function TransactionCard({ transaction, onSelect, selected }) {
 
   return (
     <motion.button
-      whileHover={{ y: -2 }}
+      whileHover={selected ? { y: -3, scale: 1.003 } : hoverLift}
       whileTap={{ scale: 0.995 }}
       type="button"
       onClick={() => onSelect(transaction)}
       className={`group relative w-full overflow-hidden rounded-[24px] border p-5 text-left transition ${
         selected
-          ? 'border-brand-sky/35 bg-brand-sky/[0.08] shadow-halo'
-          : 'border-white/8 bg-white/[0.03] hover:border-white/15 hover:bg-white/[0.05]'
+          ? 'border-brand-sky/45 bg-[linear-gradient(180deg,rgba(142,178,198,0.12),rgba(18,26,38,0.82))] shadow-[0_20px_60px_rgba(9,15,24,0.44),0_0_0_1px_rgba(142,178,198,0.16),0_0_36px_rgba(142,178,198,0.14)]'
+          : 'border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.02))] hover:border-white/15 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))]'
       }`}
     >
-      <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${direction.border}`} />
+      <motion.div
+        className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${direction.border}`}
+        animate={selected ? { opacity: [0.6, 1, 0.6] } : { opacity: 0.8 }}
+        transition={{ duration: 2.4, repeat: selected ? Infinity : 0, ease: 'easeInOut' }}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05),transparent_34%)] opacity-80" />
+      {selected ? (
+        <motion.div
+          className="pointer-events-none absolute inset-0 rounded-[24px] border border-brand-sky/20"
+          animate={{ opacity: [0.4, 0.9, 0.4] }}
+          transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ) : null}
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <div className={`rounded-xl border border-white/10 bg-white/[0.04] p-2 ${direction.tone}`}>
+              <div className={`rounded-[18px] border border-white/10 bg-white/[0.05] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${direction.tone}`}>
                 <DirectionIcon className="h-4 w-4" />
               </div>
               <div className="min-w-0">
@@ -69,7 +82,7 @@ function TransactionCard({ transaction, onSelect, selected }) {
                 target="_blank"
                 rel="noreferrer"
                 onClick={(event) => event.stopPropagation()}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-200 transition hover:bg-white/[0.08] hover:text-white"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:text-white"
                 aria-label="View transaction on Blockstream Explorer"
                 title="View transaction on Blockstream Explorer"
               >
@@ -96,7 +109,7 @@ function TransactionCard({ transaction, onSelect, selected }) {
         </div>
 
         <div className="text-left lg:text-right">
-          <p className={`font-display text-2xl tracking-tight ${direction.tone}`}>
+          <p className={`font-display text-[2rem] tracking-[-0.04em] ${direction.tone}`}>
             {directionPrefix}
             {formatBTC(transaction.displayAmount)}
           </p>
@@ -106,7 +119,7 @@ function TransactionCard({ transaction, onSelect, selected }) {
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 text-sm text-slate-400 sm:grid-cols-3">
+      <div className="relative mt-6 grid gap-3 text-sm text-slate-400 sm:grid-cols-3">
         <div>
           <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Fee</p>
           <p className="mt-1 text-slate-200">{formatSats(transaction.fee)}</p>

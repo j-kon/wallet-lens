@@ -1,9 +1,11 @@
+import { motion } from 'framer-motion';
 import { Coins } from 'lucide-react';
 import { formatBTC, formatSats } from '../utils/formatBTC';
 import { shortenTxid } from '../utils/shortenTxid';
 import Badge from './UI/Badge';
 import Card from './UI/Card';
 import EmptyState from './UI/EmptyState';
+import { fadeUp, hoverLift, listItemReveal, softStagger } from '../utils/motion';
 
 function UtxoPanel({ utxos }) {
   const utxoBalance = utxos.reduce((sum, utxo) => sum + (utxo.value ?? 0), 0);
@@ -11,12 +13,13 @@ function UtxoPanel({ utxos }) {
   const pendingCount = utxos.length - confirmedCount;
 
   return (
-    <Card className="p-6 lg:p-7 xl:sticky xl:top-24">
+    <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+      <Card className="p-6 lg:p-7 xl:sticky xl:top-24">
       <div className="flex items-start justify-between gap-4 border-b border-white/6 pb-5">
         <div>
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">UTXO Panel</p>
-          <h2 className="mt-2 font-display text-2xl text-slate-50">Spendable outputs</h2>
-          <p className="mt-2 text-sm text-slate-400">
+          <h2 className="mt-2 font-display text-[2rem] tracking-[-0.04em] text-slate-50">Spendable outputs</h2>
+          <p className="mt-3 text-sm leading-7 text-slate-400">
             UTXOs are unspent outputs that can be used to build new transactions.
           </p>
         </div>
@@ -38,24 +41,31 @@ function UtxoPanel({ utxos }) {
         </div>
       ) : (
         <>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={softStagger}
+            className="mt-6 grid gap-3 sm:grid-cols-2"
+          >
+            <motion.div variants={listItemReveal} whileHover={hoverLift} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
               <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Confirmation Mix</p>
               <p className="mt-2 text-sm text-slate-200">{confirmedCount} confirmed • {pendingCount} pending</p>
-            </div>
-            <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+            </motion.div>
+            <motion.div variants={listItemReveal} whileHover={hoverLift} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
               <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Sort Order</p>
               <p className="mt-2 text-sm text-slate-200">Outputs are sorted by amount, largest first.</p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div className="mt-6 space-y-3">
+          <motion.div initial="hidden" animate="visible" variants={softStagger} className="mt-6 space-y-3">
             {utxos.map((utxo, index) => (
-              <div
+              <motion.div
                 key={`${utxo.txid}:${utxo.vout}`}
+                variants={listItemReveal}
+                whileHover={hoverLift}
                 className={`rounded-[22px] border p-4 ${
                   index === 0
-                    ? 'border-brand-amber/25 bg-brand-amber/8'
+                    ? 'border-brand-amber/28 bg-[linear-gradient(180deg,rgba(216,164,91,0.1),rgba(255,255,255,0.02))] shadow-[0_20px_40px_rgba(216,164,91,0.08)]'
                     : 'border-white/8 bg-white/[0.03]'
                 }`}
               >
@@ -84,18 +94,19 @@ function UtxoPanel({ utxos }) {
                     {utxo.confirmations ? `${utxo.confirmations} confirmations` : 'Awaiting first confirmation'}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
-          <div className="mt-6 rounded-[22px] border border-brand-amber/15 bg-brand-amber/5 p-4">
+          <motion.div variants={listItemReveal} className="mt-6 rounded-[24px] border border-brand-amber/15 bg-brand-amber/5 p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Visible UTXO Balance</p>
             <p className="mt-2 font-display text-2xl text-brand-amber">{formatBTC(utxoBalance)}</p>
             <p className="mt-1 text-sm text-slate-400">{formatSats(utxoBalance)}</p>
-          </div>
+          </motion.div>
         </>
       )}
     </Card>
+    </motion.div>
   );
 }
 

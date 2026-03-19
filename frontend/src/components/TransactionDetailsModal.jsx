@@ -7,16 +7,17 @@ import { getTransactionExplorerUrl } from '../utils/explorerLinks';
 import Badge from './UI/Badge';
 import CopyButton from './UI/CopyButton';
 import { Loader } from './UI/Loader';
+import { gentleStagger, listItemReveal, modalBackdrop, modalPanel, softStagger } from '../utils/motion';
 
 function DetailColumn({ title, items, address, kind }) {
   return (
-    <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+    <motion.div variants={listItemReveal} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm font-medium text-slate-100">{title}</p>
         <Badge variant="subtle">{items.length}</Badge>
       </div>
 
-      <div className="space-y-3">
+      <motion.div initial="hidden" animate="visible" variants={gentleStagger} className="space-y-3">
         {items.map((item, index) => {
           const itemAddress =
             item?.prevout?.scriptpubkey_address ?? item?.scriptpubkey_address ?? 'Address unavailable';
@@ -24,8 +25,9 @@ function DetailColumn({ title, items, address, kind }) {
           const highlighted = itemAddress === address;
 
           return (
-            <div
+            <motion.div
               key={`${kind}-${item.txid ?? itemAddress}-${index}`}
+              variants={listItemReveal}
               className={`rounded-2xl border p-3 ${highlighted ? 'border-brand-sky/25 bg-brand-sky/10' : 'border-white/8 bg-black/10'}`}
             >
               <p className="break-all font-mono text-xs leading-6 text-slate-100">{itemAddress}</p>
@@ -35,11 +37,11 @@ function DetailColumn({ title, items, address, kind }) {
                 </span>
                 <span className="font-medium text-slate-100">{formatBTC(value)}</span>
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -74,23 +76,24 @@ function TransactionDetailsModal({
       {isOpen ? (
         <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          variants={modalBackdrop}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
         >
           <button
             type="button"
-            className="absolute inset-0 bg-[rgba(2,6,12,0.78)] backdrop-blur-md"
+            className="absolute inset-0 bg-[rgba(2,6,12,0.72)] backdrop-blur-lg"
             onClick={onClose}
             aria-label="Close transaction details"
           />
 
           <motion.div
-            initial={{ opacity: 0, y: 18, scale: 0.985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 18, scale: 0.985 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-[32px] border border-white/10 bg-[rgba(10,14,21,0.98)] shadow-[0_40px_120px_rgba(0,0,0,0.5)]"
+            variants={modalPanel}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="relative z-10 max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(180deg,rgba(13,18,27,0.99),rgba(8,12,18,0.98))] shadow-[0_40px_120px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4 border-b border-white/6 px-6 py-5 sm:px-8">
@@ -128,7 +131,7 @@ function TransactionDetailsModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
+                className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:bg-white/[0.08] hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -137,27 +140,32 @@ function TransactionDetailsModal({
             {!activeTransaction ? (
               <Loader className="px-6 sm:px-8" label="Loading transaction detail..." />
             ) : (
-              <div className="max-h-[calc(92vh-96px)] overflow-y-auto px-6 py-6 sm:px-8">
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={softStagger}
+                className="max-h-[calc(92vh-96px)] overflow-y-auto px-6 py-6 sm:px-8"
+              >
                 {error ? (
-                  <div className="mb-5 rounded-2xl border border-amber-400/15 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+                  <motion.div variants={listItemReveal} className="mb-5 rounded-2xl border border-amber-400/15 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
                     {error}
-                  </div>
+                  </motion.div>
                 ) : null}
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                <motion.div variants={softStagger} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <motion.div variants={listItemReveal} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                     <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Fee</p>
                     <p className="mt-3 font-display text-2xl text-slate-50">{formatSats(activeTransaction.fee)}</p>
                     <p className="mt-2 text-sm text-slate-400">{formatFeeRate(activeTransaction.feeRate)}</p>
-                  </div>
-                  <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                  </motion.div>
+                  <motion.div variants={listItemReveal} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                     <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Confirmations</p>
                     <p className="mt-3 font-display text-2xl text-slate-50">
                       {activeTransaction.confirmations ?? 'n/a'}
                     </p>
                     <p className="mt-2 text-sm text-slate-400">{formatTimestampWithRelative(activeTransaction.status?.block_time)}</p>
-                  </div>
-                  <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                  </motion.div>
+                  <motion.div variants={listItemReveal} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-slate-500">
                       <Blocks className="h-3.5 w-3.5" />
                       Size / Weight
@@ -166,8 +174,8 @@ function TransactionDetailsModal({
                     <p className="mt-2 text-sm text-slate-400">
                       {activeTransaction.size ?? 'n/a'} bytes • {activeTransaction.weight ?? 'n/a'} weight units
                     </p>
-                  </div>
-                  <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                  </motion.div>
+                  <motion.div variants={listItemReveal} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-slate-500">
                       <Scale className="h-3.5 w-3.5" />
                       Wallet Flow
@@ -177,8 +185,8 @@ function TransactionDetailsModal({
                       {formatBTC(activeTransaction.displayAmount ?? activeTransaction.netValue)}
                     </p>
                     <p className="mt-2 capitalize text-sm text-slate-400">{activeTransaction.direction}</p>
-                  </div>
-                </div>
+                  </motion.div>
+                </motion.div>
 
                 <div className="mt-6 grid gap-4 xl:grid-cols-2">
                   <DetailColumn
@@ -195,7 +203,7 @@ function TransactionDetailsModal({
                   />
                 </div>
 
-                <div className="mt-6 rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                <motion.div variants={listItemReveal} className="mt-6 rounded-[24px] border border-white/8 bg-white/[0.03] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                   <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-slate-500">
                     <Clock3 className="h-3.5 w-3.5" />
                     Execution Metadata
@@ -206,8 +214,8 @@ function TransactionDetailsModal({
                     <p>Block Height: {activeTransaction.status?.block_height ?? 'Pending'}</p>
                     <p>Virtual Size: {activeTransaction.vsize ?? 'n/a'} vB</p>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             )}
           </motion.div>
         </motion.div>

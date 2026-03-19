@@ -6,6 +6,7 @@ import EmptyState from './UI/EmptyState';
 import Badge from './UI/Badge';
 import Card from './UI/Card';
 import { InlineSpinner, Loader } from './UI/Loader';
+import { fadeUp, listItemReveal, softStagger } from '../utils/motion';
 
 function TransactionList({
   transactions,
@@ -23,12 +24,13 @@ function TransactionList({
     netFlow > 0 ? 'incoming' : netFlow < 0 ? 'outgoing' : 'balanced';
 
   return (
-    <Card className="p-6 lg:p-7">
+    <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+      <Card className="p-6 lg:p-7">
       <div className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Transaction History</p>
-          <h2 className="mt-2 font-display text-2xl text-slate-50">Address activity timeline</h2>
-          <p className="mt-2 text-sm text-slate-400">
+          <h2 className="mt-2 font-display text-[2rem] tracking-[-0.04em] text-slate-50">Address activity timeline</h2>
+          <p className="mt-3 text-sm leading-7 text-slate-400">
             Net values are calculated relative to the searched address, including change outputs.
           </p>
         </div>
@@ -39,7 +41,7 @@ function TransactionList({
       </div>
 
       {transactions.length > 0 ? (
-        <div className="mt-5 rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+        <motion.div variants={listItemReveal} className="mt-5 rounded-[24px] border border-white/8 bg-white/[0.03] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
           <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Net Flow</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <p className={`font-display text-2xl ${netFlowTone}`}>
@@ -53,7 +55,7 @@ function TransactionList({
           <p className="mt-2 text-sm text-slate-400">
             Net address flow across the transactions currently loaded into the explorer.
           </p>
-        </div>
+        </motion.div>
       ) : null}
 
       {loading && transactions.length === 0 ? (
@@ -67,31 +69,9 @@ function TransactionList({
           />
         </div>
       ) : (
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: {},
-            visible: {
-              transition: {
-                staggerChildren: 0.06,
-              },
-            },
-          }}
-          className="mt-6 space-y-3"
-        >
+        <motion.div initial="hidden" animate="visible" variants={softStagger} className="mt-6 space-y-3">
           {transactions.map((transaction) => (
-            <motion.div
-              key={transaction.txid}
-              variants={{
-                hidden: { opacity: 0, y: 14 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
-                },
-              }}
-            >
+            <motion.div key={transaction.txid} variants={listItemReveal}>
               <TransactionCard
                 transaction={transaction}
                 onSelect={onSelectTransaction}
@@ -103,7 +83,7 @@ function TransactionList({
       )}
 
       {transactions.length > 0 ? (
-        <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <motion.div variants={listItemReveal} className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-400">
             {hasMoreTransactions
               ? 'Load the next Esplora chain page to continue browsing older activity.'
@@ -114,14 +94,15 @@ function TransactionList({
             type="button"
             onClick={onLoadMoreTransactions}
             disabled={!hasMoreTransactions || loadingMoreTransactions}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm font-medium text-slate-100 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-[20px] border border-white/10 bg-white/[0.04] px-4 text-sm font-medium text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loadingMoreTransactions ? <InlineSpinner /> : null}
             {loadingMoreTransactions ? 'Loading more...' : hasMoreTransactions ? 'Load more' : 'No more transactions'}
           </button>
-        </div>
+        </motion.div>
       ) : null}
     </Card>
+    </motion.div>
   );
 }
 
